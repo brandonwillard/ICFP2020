@@ -1,0 +1,37 @@
+#+TITLE: miniKanren for Statistical Computation
+#+AUTHOR: Brandon T. Willard
+#+DATE: 2020-05-09
+#+EMAIL: brandonwillard@gmail.com
+#+FILETAGS: :symbolic-pymc:theano:statistics:timeseries:dlm:ffbs:gibbs:
+
+#+STARTUP: hideblocks indent hidestars
+#+OPTIONS: author:t date:t ^:nil toc:t title:t tex:t d:(not "todo" "logbook" "note" "testing" "notes") html-preamble:t
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+
+#+PROPERTY: header-args :eval never-export :exports both :results output drawer replace
+#+PROPERTY: header-args+ :session dlm-optimizations :comments noweb
+#+PROPERTY: header-args:python :noweb-sep "\n\n"
+#+PROPERTY: header-args:latex :results replace :exports results :eval yes
+
+#+BEGIN_abstract
+This article attempts to provide an overview of the current use and future
+potential of symbolic computation among the statistical modeling community in
+Python and the important role that miniKanren could fill within it.
+#+END_abstract
+
+* Introduction
+- Probabilistic Programming Languages (PPLs) are DSLs that model elements of linear algebra and probability theory
+- PPLs are often backed by "Tensor libraries"
+- Tensor libraries are the somewhat more modern equivalents of LAPACK and BLAS-type offerings.
+- They use symbolic graphs
+* Symbolic Computation (covertly) on the Rise
+- The symbolic computation behind the Deep Learning libraries (e.g. Theano, TensorFlow, Torch)
+- Automatic Differentiation is/was the focus, but it's also been on linear algebra relations
+- Explicit examples in Theano, unification features in Theano, TensorFlow is still trying to catch up (e.g. )
+* miniKanren in Python
+- a more “Pythonic” miniKanren implementation,
+- working around the lack of CONs/algebraic data types,
+- hurdles due to no recursion support (e.g. no TCO),
+- use of generators/coroutines to implement the stream mechanics, etc.
+* Discussion
