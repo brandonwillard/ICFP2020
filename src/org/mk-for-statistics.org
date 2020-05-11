@@ -2,12 +2,24 @@
 #+AUTHOR: Brandon T. Willard
 #+DATE: 2020-05-09
 #+EMAIL: brandonwillard@gmail.com
-#+FILETAGS: :symbolic-pymc:theano:statistics:timeseries:dlm:ffbs:gibbs:
+#+FILETAGS: :minikanren:pymc:symbolic-pymc:theano:tensorflow:statistics:relational-programming:
 
 #+STARTUP: hideblocks indent hidestars
 #+OPTIONS: author:t date:t ^:nil toc:t title:t tex:t d:(not "todo" "logbook" "note" "testing" "notes") html-preamble:t
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
+
+#+BEGIN_SRC elisp :eval yes :exports none :results silent
+(add-to-list 'org-latex-classes
+             '("amsart" "\\documentclass[11pt]{amsart}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+#+END_SRC
+
+#+SETUPFILE: latex-setup.org
 
 #+PROPERTY: header-args :eval never-export :exports both :results output drawer replace
 #+PROPERTY: header-args+ :session dlm-optimizations :comments noweb
@@ -17,7 +29,7 @@
 #+BEGIN_abstract
 This article attempts to provide an overview of the current use and future
 potential of symbolic computation among the statistical modeling community in
-Python and the important role that miniKanren could fill within it.
+Python and the increasingly important role that miniKanren could fill within it.
 #+END_abstract
 
 * Introduction
@@ -25,13 +37,72 @@ Python and the important role that miniKanren could fill within it.
 - PPLs are often backed by "Tensor libraries"
 - Tensor libraries are the somewhat more modern equivalents of LAPACK and BLAS-type offerings.
 - They use symbolic graphs
-* Symbolic Computation (covertly) on the Rise
+* Symbolic computation (covertly) on the rise
 - The symbolic computation behind the Deep Learning libraries (e.g. Theano, TensorFlow, Torch)
-- Automatic Differentiation is/was the focus, but it's also been on linear algebra relations
-- Explicit examples in Theano, unification features in Theano, TensorFlow is still trying to catch up (e.g. )
+- Automatic Differentiation (AD) is/was the focus, but it's also been on linear algebra relations
+- Explicit examples in Theano (e.g. unification and optimizations in Theano)
+- TensorFlow is still trying to catch up (e.g. Grappler)
+- Composable transforms for differentiation, vectorization, GPU acceleration, etc.: [[https://github.com/google/jax][JAX]]
+- Statistical modeling surprisingly amenable to symbolic methods--and especially the Bayesian variety
+  - Existing software solutions with symbolic components:
+    - PPLs capitalize on AD and essentially only one MCMC approach (Hamiltonian Monte Carlo), with "automated" conditioning tranforms
+    - BUGS and JAGS are more like expert systems that use slice sampling
+      - Example/description, mention the algebra going into it
+    - [[https://github.com/pymc-devs][PyMC]] [[citep:SalvatierProbabilisticprogrammingPython2016]] automatically recommends which sampler to use based on properties of the model
+- General optimization can use symbolic computation
+  - Convex Analysis and Proximal Algorithms are amenable to simple expert-like systems [[citep:HamiltonSymbolicconvexanalysis2005]]
+  - Description of symbolic computation for Proximal Algorithms in [[citet:WillardRoleSymbolicComputation2017]]
+    - Use tables + connecting properties, theorems to cover a large number of model + method combinations, like symbolic integration using tabled special functions [[citep:peasgood_method_2009]]
+    - Symbolic computation of Fenchel conjugates [[citep:bauschke_symbolic_2006]]
+- Relations succinctly detail the differences between a large variety of samplers and optimization routines
+  - Theorems in probability theory, transformations, etc., are relations
+    - [[citet:GelmanTransformingparameterssimple2019]]
+  - Scale mixture representations that lead to efficient samplers [[citep:BhadraDefaultBayesiananalysis2016]]
+  - Parameter expansion [[citep:scott_parameter_2010]]
+  - Examples/description
+    - STAN reformulation example stated as a simple relation [[citep:WillardAutomaticRecenteringRescaling]]
+* Where miniKanren fits in
+- Lightweight orchestration of unification and reification
+  - A walk-through using src_python[:eval never]{kanren} using TensorFlow is given in [[citet:WillardTourSymbolicPyMC2020]]
+- The importance of native DSLs over existing symbolic math libraries and language/context shifting
+  - Make it possible to think and develop /relationally/ in the host language
+  - Make low-level, potentially non-relational, adjustments at nearly any stage
+  - Build around/on top of the tensor-libraries-of-the-year while maintaining some portability to the relations (i.e. effectively decouple relations from underlying graph libraries)
+- The need for symbolic DSLs to work for modeler’s and not just the developers
+  - Exploratory tools used by the domain expert for research
+    - E.g. show me all the ways that a model can be reformulated under mixture representations
+- Relational expression manipulation and its value to statistical modeling
+- Build libraries of the *relations* that underly numeric stability "tricks" (e.g. STAN funnel example), that generate custom samplers for a given model
+* What miniKanren needs
+- In general, for miniKanren to fulfill these purposes, it needs to be combined with some standard applied term rewriting features
+- Relational graph traversal
+  - Examples of [[https://github.com/pythological/kanren/blob/master/doc/graphs.md][existing relations]]
+  - Include and compute graph "metadata" (e.g. tag "operators" for efficient traversal to relevant nodes)
+- Efficiently computing fixed-points for relations (e.g. tabling)
+- Adding [[https://github.com/pythological/kanren/pull/27][associative-commutative relations]] and general equational logic to
+  miniKanren (and perhaps not via extensions to unification?)
+- Guided src_python[:eval never]{conde} branching
+  - Using measures for computational cost
+  - E.g. src_python[:eval never]{condp}
+- Scaling for large and complex src_scheme[:eval never]{(conde ((≡ form-in form-in-template) (≡ form-out form-out-template)))}
+  - Some type of goal "compilation"
+  - Could be related to, or involve, completion
 * miniKanren in Python
-- a more “Pythonic” miniKanren implementation,
-- working around the lack of CONs/algebraic data types,
-- hurdles due to no recursion support (e.g. no TCO),
-- use of generators/coroutines to implement the stream mechanics, etc.
+- Reaching the broader scientific computing and data science crowd via Python
+- A more “Pythonic” miniKanren implementation with constraints
+  - [[https://github.com/pythological/kanren][src_python[:eval never]{kanren}]]
+- Working around the lack of CONs/algebraic data types,
+  - [[https://github.com/pythological/python-cons][src_python[:eval never]{python-cons}]]
+- Hurdles due to no recursion support (e.g. no TCO),
+  - Manually designed trampolines to overcome src_python[:eval never]{RecursionError}s
+- Use of generators/coroutines to implement the stream mechanics, etc.
 * Discussion
+- New symbolic "platforms" are being developed all the time and implementing sophisticated symbolic logic is becoming more challenging and risky, which disincentives such efforts
+- We need a light-weight suitable platform for symbolic, math-level work that doesn't force us to compromise existing platforms or shoehorn abstractions
+- Are there aspects of miniKanren that lend well (or otherwise) to more advanced--and relevant--term rewriting capabilities?
+  - Relational completion, completion for non-terminating rewrite systems
+- This work is being done across [[https://github.com/pymc-devs/symbolic-pymc][src_python[:eval never]{symbolic-pymc}]] and the [[https://github.com/pythological][Pythological]] packages.
+
+
+#+BIBLIOGRAPHYSTYLE: plainnat
+#+BIBLIOGRAPHY: ../tex/ICFP2020.bib
