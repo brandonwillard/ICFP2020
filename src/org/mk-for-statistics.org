@@ -84,7 +84,7 @@ Python and the increasingly important role that miniKanren could fill within it.
 - Guided src_python[:eval never]{conde} branching
   - Using measures for computational cost
   - E.g. src_python[:eval never]{condp}
-- Scaling for large and complex src_scheme[:eval never]{(conde ((≡ form-in form-in-template) (≡ form-out form-out-template)))}
+- Scaling for large and complex src_scheme[:eval never]{(conde ((== form-in form-in-template) (== form-out form-out-template)))}
   - Some type of goal "compilation"
   - Could be related to, or involve, completion
 * miniKanren in Python
