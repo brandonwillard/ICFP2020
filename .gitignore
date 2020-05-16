@@ -1,0 +1,5 @@
+output/
+src/tex/.build/
+src/tex/_minted-.build/
+src/tex/auto/
+*.aux
