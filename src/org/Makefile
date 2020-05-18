@@ -5,14 +5,16 @@
 #
 .PHONY: all clean install-cask %.pdf %.tex
 
-CASK_DIR ?= ${HOME}/.cask
-CASK_BIN ?= ${CASK_DIR}/bin/cask
+CASK_BIN ?= ${HOME}/.cask/bin/cask
 EMACS_BIN ?= emacs
 
 SRC_DIR = $(realpath $(dir $<))
 DEST_DIR = $(abspath ../../output)
 FIG_DIR = $(abspath ../../figures)
 TEX_DIR = $(abspath ../tex)
+
+CASK_LIB_DIR ?= ${SRC_DIR}/.cask
+
 IGNORE_FILES := ${SRC_DIR}/latex-setup.org latex-setup.org
 
 ORG_FILES := $(filter-out ${IGNORE_FILES}, $(wildcard *.org))
@@ -27,7 +29,7 @@ install-cask:
 
 ${TEX_DIR}/%.tex: %.org .cask org-export-init.el
 	@if [ ! -f ${CASK_BIN} ]; then echo "Cask not found; do 'make install-cask' first."; exit 1; fi
-	PUB_FILE=$< FIG_DIR=${FIG_DIR} TEX_DIR=${TEX_DIR} CASK_DIR=${CASK_DIR} \
+	PUB_FILE=$< FIG_DIR=${FIG_DIR} TEX_DIR=${TEX_DIR} CASK_LIB_DIR=${CASK_LIB_DIR} \
 		$(EMACS_BIN) --quick --batch -l org-export-init.el --visit $< -f org-publish-current-file
 
 ${DEST_DIR}/%.pdf: ${TEX_DIR}/%.tex
