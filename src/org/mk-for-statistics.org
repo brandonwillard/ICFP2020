@@ -474,7 +474,7 @@ built-in src_python[:eval never]{permutations}.
 
 This approach also makes it possible for goals to more easily control the order
 of output results in their generated goal streams, and, using Python's coroutine
-capabilities, it's also possible to send results back to a goal producing an
+capabilities, it's also possible to send results back to a goal producing a
 goal stream [[citep:PEP342Coroutines]].
 
 ** Constraints
@@ -501,7 +501,7 @@ constraint system in miniKanren.
 
 ** ~CONS~
 One of the main challenges involved in implementing miniKanren in some host languages is
-the lack of immediate support for some important Scheme/Lisp-like elements.  The most notable
+the lack of immediate support for important Scheme/Lisp-like elements.  The most notable
 being ~CONS~.  Our Python implementation of miniKanren preserves nearly all the
 same algebraic datatype semantics of ~CONS~ pairs through
 a src_python[:eval never]{cons} package
@@ -513,7 +513,7 @@ types.
 expressiveness in term rewriting.  For instance, while "pattern matching"--or
 unification--alone can be rather straight-forward to implement, and more than a
 couple of the software systems mentioned here have introduced basic pattern
-matching, they all tend to lack simplicity afforded by the use of list-based
+matching, they all tend to lack the simplicity afforded by list-based
 terms and proper ~CONS~ semantics, making unification against a term's ~CDR~ or
 "tail" cumbersome to express (or implement).
 
@@ -524,7 +524,7 @@ arguments appears to fall outside of the unification system's reach entirely.
 
 As Listing [[cons-cdr-unify-example]] demonstrates,
 with src_python[:eval never]{cons} we're able to succinctly express such a
-"pattern" very easily for all the built-in ordered collection types.
+"pattern" for all the built-in ordered collection types.
 #+NAME: cons-cdr-unify-example
 #+BEGIN_SRC python :eval never
 >>> unify([1, 2], cons(var('car'), var('cdr')), {})
