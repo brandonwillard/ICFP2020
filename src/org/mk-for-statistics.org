@@ -5,7 +5,7 @@
 #+FILETAGS: :minikanren:pymc:symbolic-pymc:statistics:relational-programming:
 
 #+STARTUP: hideblocks indent hidestars
-#+OPTIONS: author:t date:t ^:nil toc:t title:t tex:t d:(not "todo" "logbook" "note" "testing" "notes") html-preamble:t
+#+OPTIONS: author:t date:t ^:nil toc:nil title:t tex:t d:(not "todo" "logbook" "note" "testing" "notes") html-preamble:t
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 
@@ -24,7 +24,7 @@
 #+PROPERTY: header-args :eval never-export :exports both :results output drawer replace
 #+PROPERTY: header-args+ :session dlm-optimizations :comments noweb
 #+PROPERTY: header-args:python :noweb-sep "\n\n"
-#+PROPERTY: header-args:latex :results replace :exports results :eval yes
+#+PROPERTY: header-args:latex :results raw replace :exports results :eval yes
 
 #+BEGIN_abstract
 This article attempts to provide an overview of the current use and future
@@ -52,7 +52,7 @@ Python and the increasingly important role that miniKanren could fill within it.
   - [[citep:CasellaRaoBlackwellisationsamplingschemes1996]]
 - Statistical modeling surprisingly amenable to symbolic methods--and especially the Bayesian variety
   - Existing software solutions with symbolic components:
-    - PPLs capitalize on AD and essentially only one MCMC approach (Hamiltonian Monte Carlo), with "automated" conditioning tranforms
+    - PPLs capitalize on AD and essentially only one MCMC approach (Hamiltonian Monte Carlo), with "automated" conditioning transforms
     - BUGS and JAGS are more like expert systems that use slice sampling
       - Example/description, mention the algebra going into it
     - [[https://github.com/pymc-devs][PyMC]] [[citep:SalvatierProbabilisticprogrammingPython2016]] automatically recommends which sampler to use based on properties of the model
@@ -111,7 +111,7 @@ network-specific DSLs and frameworks [[citep:WeiDLVMmoderncompiler2017]],
 calculi [[citep:MullinTensorsndArrays2009]], etc.  Given the degree of
 specialization in this area of work, few--if any--of the resulting frameworks or
 implementations provide an apparent benefit to more than a couple of the
-objectives stated in [[#sec:want-to-do]].
+objectives stated in Section [[#sec:want-to-do]].
 
 In general, work that reformulates--or even implicitly obfuscates--the well
 established underlying frameworks and mechanics behind the relevant symbolic
@@ -149,11 +149,34 @@ Likewise, when performance is absolutely necessary, it's easy to implement
 relations directly in the host language.  This is true for more than just
 individual relations.
 
-In our Python implementation of miniKanren
-[[citep:Willardpythologicalkanren]], src_python[:eval never]{kanren}, goals and
-goal streams are implemented using Python's generators
-[[citep:GeneratorsPythonWiki]].  As Listing [[low-level-relations]] shows, a goal
-can take full advantage of the generator capabilities.
+* Symbolic Computation in Python Driven by miniKanren
+
+In the following sections we detail our implementation of miniKanren
+[[citep:Willardpythologicalkanren]], operating under the PyPy
+name src_python[:eval never]{miniKanren} and Python package
+name src_python[:eval never]{kanren}, and its ecosystem of complementary
+packages.
+
+src_python[:eval never]{kanren} is a fork that tries to maintain parity with
+the original implementation, but now deviates significantly in a number of
+ways described in what follows.  Both this fork and the original version
+have some small, but noteworthy, differences from the standard miniKanren
+literature.  Specifically, the \(\equiv\) goal is represented by the function
+src_python[:eval never]{eq}, there is no ~fresh~--instead, fresh logic variables
+are constructed explicitly using the function src_python[:eval never]{var}, and
+the functionality of ~bind~ and ~mplus~ are represented by the logical "and" and "or"
+functions src_python[:eval never]{lall} and src_python[:eval never]{lany} and
+are essentially the ~conj~ and ~disj~ of [[citet:HemannmKanrenminimalfunctional2013]].
+
+** Goals as Generators
+Our implementation of miniKanren represents goals and goal streams using
+Python's built-in generators [[citep:GeneratorsPythonWiki]].  The resulting
+simplicity of this approach is an example of how well miniKanren's underlying
+mechanics can be adapted to host languages in which the standard list-based
+approach isn't as natural or efficient as it is in Scheme.
+
+As Listing [[low-level-relations]] shows, a goal can take full advantage of the
+generator capabilities.
 
 #+NAME: low-level-relations
 #+BEGIN_SRC python :eval never
@@ -228,28 +251,457 @@ def relationo(*args):
     return relationo_goal
 #+END_SRC
 
-The same Scheme and Lisp-like semantics are possible in most host languages as
-well, although some languages may require extra effort.  For instance, our
-Python implementation of miniKanren preserves nearly all the same algebraic
-datatype semantics of ~CONS~ pairs through a src_python[:eval never]{cons}
-package [[citep:Willardpythologicalpythoncons2020]] that provides an easily
-extensible class and set of generic functions that incorporate Python's built-in
-sequence types.
+The implementation patterns described in Listing [[low-level-relations]] are
+realized in a number of low-level goal implementations
+within src_python[:eval never]{kanren}.  One good example is the
+goal src_python[:eval never]{permuteo}, which relates an ordered collection to
+its permutations.  Within src_python[:eval never]{permuteo}, low-level Python
+steps are taken in order to efficiently difference collections using hashes of
+their elements and to iteratively compute permutations using Python's
+built-in src_python[:eval never]{permutations}.
 
+This approach also makes it possible for goals to more easily control the order
+of output results in their generated goal streams, and, using Python's coroutine
+capabilities, it's also possible to send results back to a goal producing an
+goal stream [[citep:PEP342Coroutines]].
+
+** Constraints
+Our Python implementation follows the approach of
+[[citet:Hemannframeworkextendingmicrokanren2017]] to implement a minimal
+constraint system in miniKanren.
+
+#+NAME: constraints-example
+#+BEGIN_SRC python :eval never
+>>> from kanren.constraints import neq, isinstanceo
+
+>>> run(0, x,
+...     neq(x, 1),  # Not "equal" to 1
+...     neq(x, 3),  # Not "equal" to 3
+...     membero(x, (1, 2, 3)))
+(2,)
+
+>>> from numbers import Integral
+>>> run(0, x,
+...     isinstanceo(x, Integral),  # `x` must be of type `Integral`
+...     membero(x, (1.1, 2, 3.2, 4)))
+(2, 4)
+#+END_SRC
+
+** ~CONS~
+One of the main challenges involved in implementing miniKanren in some host languages is
+the lack of immediate support for some important Scheme/Lisp-like elements.  The most notable
+being ~CONS~.  Our Python implementation of miniKanren preserves nearly all the
+same algebraic datatype semantics of ~CONS~ pairs through
+a src_python[:eval never]{cons} package
+[[citep:Willardpythologicalpythoncons2020]] that provides an easily extensible
+class and set of generic functions that incorporate Python's built-in sequence
+types.
+
+~CONS~ support is important for maintaining certain forms of simplicity and
+expressiveness in term rewriting.  For instance, while "pattern matching"--or
+unification--alone can be rather straight-forward to implement, and more than a
+couple of the software systems mentioned here have introduced basic pattern
+matching, they all tend to lack simplicity afforded by the use of list-based
+terms and proper ~CONS~ semantics, making unification against a term's ~CDR~ or
+"tail" cumbersome to express (or implement).
+
+A good example is Theano's unification system
+[[citep:GraphoptimizationTheano2020]]; attempting to construct a pattern that
+matches a specific ~CAR~, or operator, and an unspecified number/type of
+arguments appears to fall outside of the unification system's reach entirely.
+
+As Listing [[cons-cdr-unify-example]] demonstrates,
+with src_python[:eval never]{cons} we're able to succinctly express such a
+"pattern" very easily for all the built-in ordered collection types.
+#+NAME: cons-cdr-unify-example
+#+BEGIN_SRC python :eval never
+>>> unify([1, 2], cons(var('car'), var('cdr')), {})
+{~car: 1, ~cdr: [2]}
+
+>>> reify(cons(1, var('cdr')), {var('cdr'): [2, 3]})
+[1, 2, 3]
+
+>>> reify(cons(1, var('cdr')), {var('cdr'): None})
+[1]
+#+END_SRC
+
+In line with our broader objectives, we believe that sufficiently powerful and
+expressive "pattern matching" shouldn't operate outside of the host language and
+its familiar types--if it isn't absolutely required.
+
+** S-Expressions
+
+Since Python doesn't provide a programmatically convenient intermediate form of
+expressions or terms, we've constructed a
+simple src_python[:eval never]{ExpressionTuple} type that extends the
+built-in src_python[:eval never]{tuple} with the ability to evaluate itself and
+cache its results.  While Python does provide AST objects that fully represent
+expressions, they are cumbersome to work with and do not provide much in the way
+of relevant functionality (e.g. access to nested elements is too indirect, their
+construction and use involves irrelevant meta information, etc.)
+
+#+NAME: etuple-examples
+#+BEGIN_SRC python :eval never
+>>> from operator import add
+>>> from etuples import etuple, etuplize
+
+>>> et = etuple(add, 1, 2)
+>>> et
+ExpressionTuple((<built-in function add>, 1, 2))
+#+END_SRC
+
+These types can be indexed--and generally treated--like immutable src_python[:eval never]{tuple}s:
+#+NAME: etuple-index
+#+BEGIN_SRC python :eval never
+>>> et[0:2]
+ExpressionTuple((<built-in function add>, 1))
+#+END_SRC
+
+Evaluation is available through a simple cached property:
+#+NAME: etuple-eval
+#+BEGIN_SRC python :eval never
+>>> et.eval_obj
+3
+#+END_SRC
+
+src_python[:eval never]{etuple}s bridge one of the obvious gaps between
+the Lisp-like capabilities common to miniKanren and its world.
+Furthermore, it is easy to specify conversions from and
+to src_python[:eval never]{etuple}s for arbitrary types.
+
+Listing [[etuple-custom-class]] constructs two custom classes, src_python[:eval never]{Node}
+and src_python[:eval never]{Operator}, and specifies the ~CAR~ and ~CDR~ for the
+src_python[:eval never]{Node} type via the generic functions
+[[citep:Rocklinmultipledispatch2019]]
+src_python[:eval never]{rands} src_python[:eval never]{rator}, respectively.
+An src_python[:eval never]{apply} dispatch is also specified, which represents a
+combination of ~CONS~ (via the aforementioned src_python[:eval never]{cons}
+library) and an S-expression evaluation.
+
+#+NAME: etuple-custom-class
+#+BEGIN_SRC python :eval never
+from collections.abc import Sequence
+
+from etuples import rator, rands, apply
+from etuples.core import ExpressionTuple
+
+
+
+class Node:
+    def __init__(self, rator, rands):
+        self.rator, self.rands = rator, rands
+
+    def __eq__(self, other):
+        return self.rator == other.rator and self.rands == other.rands
+
+
+class Operator:
+    def __init__(self, op_name):
+        self.op_name = op_name
+
+    def __call__(self, *args):
+        return Node(Operator(self.op_name), args)
+
+    def __repr__(self):
+        return self.op_name
+
+    def __eq__(self, other):
+        return self.op_name == other.op_name
+
+
+rands.add((Node,), lambda x: x.rands)
+rator.add((Node,), lambda x: x.rator)
+
+
+@apply.register(Operator, (Sequence, ExpressionTuple))
+def apply_Operator(rator, rands):
+    return Node(rator, rands)
+#+END_SRC
+
+With the specification of src_python[:eval never]{rands}, src_python[:eval never]{rator},
+and src_python[:eval never]{apply} for src_python[:eval never]{Node} types, it is now
+possible to convert src_python[:eval never]{Node} objects to src_python[:eval never]{etuples}
+using the src_python[:eval never]{etuplize} function.  Listing [[etuple-custom-etupleize]]
+demonstrates this process and shows how the underlying object is preserved through
+conversion and evaluation.
+
+#+NAME: etuple-custom-etupleize
+#+BEGIN_SRC python :eval never
+>>> mul_op, add_op = Operator("*"), Operator("+")
+>>> mul_node = Node(mul_op, [1, 2])
+>>> add_node = Node(add_op, [mul_node, 3])
+>>> et = etuplize(add_node)
+
+>>> pprint(et)
+e(+, e(*, 1, 2), 3)
+
+>>> et.eval_obj is add_node
+True
+#+END_SRC
+
+** Relations for Term Rewriting
+Our Python implementation of miniKanren is motivated by the need to cover some of the
+symbolic computation objectives laid out here, so, in response, it provides relations
+that are specific to those needs.
+
+The most important set of relations involve graph traversal and
+manipulation.  src_python[:eval never]{symbolic-pymc} provides "meta" relations
+for applying goals to arbitrary "walkable" structures (i.e. collections that fully
+support src_python[:eval never]{cons} semantics via src_python[:eval never]{car}
+and src_python[:eval never]{cdr}).
+
+Listing [[math-reduceo]] constructs an example goal that represents two simple
+mathematical identities: i.e. \(x + x = 2 x\) and \(\log \exp x = x\).
+
+#+NAME: math-reduceo
+#+BEGIN_SRC python :eval never
+def single_math_reduceo(expanded_term, reduced_term):
+    """Construct a goal for some simple math reductions."""
+    # Create a logic variable to represent our variable term "x"
+    x_lv = var()
+    return lall(
+        # Apply an `isinstance` constraint on the logic variable
+        isinstanceo(x_lv, Real),
+        isinstanceo(x_lv, ExpressionTuple),
+        conde(
+            # add(x, x) == mul(2, x)
+            [eq(expanded_term, etuple(add, x_lv, x_lv)),
+             eq(reduced_term, etuple(mul, 2, x_lv))],
+            # log(exp(x)) == x
+            [eq(expanded_term, etuple(log, etuple(exp, x_lv))),
+             eq(reduced_term, x_lv)]),
+    )
+#+END_SRC
+
+We can combine the goal in Listing [[math-reduceo]] with the "meta"
+goal, src_python[:eval never]{reduceo}, which applies a goal recursively until a
+fixed-point is reached--assuming the relevant goal is a reduction, of course.
+(The meta goal should really be named src_python[:eval never]{fixedpointo}.)
+Additionally, we create another partial function that sets some default arguments
+for the src_python[:eval never]{walko} meta goal.
+
+#+NAME: math-partials
+#+BEGIN_SRC python :eval never
+math_reduceo = partial(reduceo, single_math_reduceo)
+term_walko = partial(walko, rator_goal=eq, null_type=ExpressionTuple)
+#+END_SRC
+
+Listing [[math-expand-reduce]] applies the goals to two unground logic variables, demonstrating
+how miniKanren nicely covers both term expansion and reduction, as well as graph traversal
+and fixed-point calculations, in a single concise framework. (The symbols
+prefixed by src_python[:eval never]{~_} in the output are unground logic variables.)
+
+#+NAME: math-expand-reduce
+#+BEGIN_SRC python :eval never
+>>> expanded_term = var()
+>>> reduced_term = var()
+>>> res = run(10, [expanded_term, reduced_term],
+>>>           term_walko(math_reduceo, expanded_term, reduced_term))
+
+>>> rjust = max(map(lambda x: len(str(x[0])), res))
+>>> print('\n'.join((f'{str(e):>{rjust}} == {str(r)}' for e, r in res)))
+                                        add(~_2291, ~_2291) == mul(2, ~_2291)
+                                                   ~_2288() == ~_2288()
+                              log(exp(add(~_2297, ~_2297))) == mul(2, ~_2297)
+                                ~_2288(add(~_2303, ~_2303)) == ~_2288(mul(2, ~_2303))
+                    log(exp(log(exp(add(~_2309, ~_2309))))) == mul(2, ~_2309)
+                                             ~_2288(~_2294) == ~_2288(~_2294)
+          log(exp(log(exp(log(exp(add(~_2315, ~_2315))))))) == mul(2, ~_2315)
+                                           ~_2288(~_2300()) == ~_2288(~_2300())
+log(exp(log(exp(log(exp(log(exp(add(~_2325, ~_2325))))))))) == mul(2, ~_2325)
+                        ~_2288(~_2294, add(~_2331, ~_2331)) == ~_2288(~_2294, mul(2, ~_2331))
+#+END_SRC
+
+To further demonstrate the expressive power of miniKanren in this context, in
+Listing [[math-constrained-expand-reduce]] we show how easy it is to perform
+term reduction, expansion, or both under structural constraints on the desired
+terms.  Specifically, we ask for the first ten expanded/reduced term pairs where
+the expanded term is a logarithm with at least one argument.
+
+#+NAME: math-constrained-expand-reduce
+#+BEGIN_SRC python :eval never
+>>> res = run(10, [expanded_term, reduced_term],
+>>>           conso(log, exp_term_cdr, expanded_term),
+>>>           conso(var(), var(), exp_term_cdr),
+>>>           term_walko(math_reduceo, expanded_term, reduced_term))
+
+>>> rjust = max(map(lambda x: len(str(x[0])), res))
+>>> print('\n'.join((f'{str(e):>{rjust}} == {str(r)}' for e, r in res)))
+                              log(exp(add(~_2457, ~_2457))) == mul(2, ~_2457)
+                                   log(add(~_2467, ~_2467)) == log(mul(2, ~_2467))
+                                           log(exp(~_2446)) == ~_2446
+                                                log(~_2460) == log(~_2460)
+                    log(exp(log(exp(add(~_2477, ~_2477))))) == mul(2, ~_2477)
+                                              log(~_2464()) == log(~_2464())
+          log(exp(log(exp(log(exp(add(~_2487, ~_2487))))))) == mul(2, ~_2487)
+                           log(~_2460, add(~_2493, ~_2493)) == log(~_2460, mul(2, ~_2493))
+log(exp(log(exp(log(exp(log(exp(add(~_2499, ~_2499))))))))) == mul(2, ~_2499)
+                         log(log(exp(add(~_2501, ~_2501)))) == log(mul(2, ~_2501))
+#+END_SRC
+
+** The src_python[:eval never]{symbolic-pymc} Package
+
+In order to bridge miniKanren and the popular tensor libraries Theano and TensorFlow,
+the project src_python[:eval never]{symbolic-pymc} provides "meta" type wrappers
+for the basic tensor graphs in each library.  These meta types allow for more
+graph mutability than the "base" libraries themselves tend to provide.  They also
+allow one to use logic variables where the base libraries wouldn't.
+
+Basic use of src_python[:eval never]{symbolic-pymc} involves either conversion
+of an existing base--i.e. Theano or TensorFlow--graph into a corresponding meta graph, or
+direct construction of meta graphs that are later converted (or "reified") to
+one of the base graph types.  miniKanren goals generally work at the meta graph level,
+where--for instance--one would apply goals that unify a converted base graph
+with a pure meta graph containing logic variables.
+
+While it is possible to achieve the same results with only src_python[:eval never]{etuple}s,
+meta graphs are a convenient form that allow developers to think and operate at the
+standard Python object level.  They also provide a more direct means of graph
+validation and setup, since checks can--and are--performed during meta graph construction,
+whereas standard src_python[:eval never]{etuple}s would not be able to perform
+such operations until the resulting src_python[:eval never]{etuple} is fully
+constructed and evaluated.  Likewise, meta graphs are more appropriate for
+specifying and obtaining derived information, like shapes and data types, for a
+(sub)graph instead of miniKanren.
+
+To demonstrate the use of src_python[:eval never]{symbolic-pymc}, we consider a
+simple conjugate model constructed using PyMC3 in Listing [[beta-binom-setup]].
+
+#+NAME: beta-binom-setup
+#+BEGIN_SRC python :eval never
+import pymc3 as pm
+
+with pm.Model() as model:
+    p = pm.Beta("p", alpha=2, beta=2)
+    y = pm.Binomial("y", n=totals, p=p, observed=obs_counts)
+#+END_SRC
+
+A user will generally have some data specifying the values
+for src_python[:eval never]{totals} and src_python[:eval never]{obs_counts} and
+will want to estimate the posterior distribution of src_python[:eval never]{p}.  One way to
+phrase this situation: we want to estimate the distribution of a rate of
+success, src_python[:eval never]{p}, for an event given a total number of
+events, src_python[:eval never]{totals}, and observed
+successes, src_python[:eval never]{obs_counts}, under the assumption that
+the events are binomially distributed with rate src_python[:eval never]{p}, itself
+having a beta prior distribution.
+
+Mathematically, this simple model is stated as follows:
+#+BEGIN_SRC latex
+\begin{equation}
+  \label{eq:beta-binom-model}
+  \begin{aligned}
+    Y &\sim \operatorname{Binom}\mleft( N, p \mright)
+    \\
+    p &\sim \operatorname{Beta}\mleft( 2, 2 \mright)
+  \end{aligned}
+\end{equation}
+#+END_SRC
+
+This model has a well known closed-form posterior distribution given by
+#+BEGIN_SRC latex
+\begin{equation}
+  \label{eq:beta-binom-post}
+  \left( p \mid Y=y \right) \sim \operatorname{Beta}\mleft( 2 + y, 2 + N - y \mright)
+\end{equation}
+#+END_SRC
+
+Instead of wasting resources estimating the posterior numerically
+(e.g. using src_python[:eval never]{pm.sample(model)} to run a Markov Chain
+Monte Carlo sampler), we can simply extract the underlying Theano graph
+from src_python[:eval never]{model} and apply a relation that represents the
+underlying conjugacy and use the resulting posterior.
+
+Listing [[beta-binom-convert]] converts the PyMC3 model object, src_python[:eval never]{model},
+into a standard Theano graph that represents the relationship between random variables
+in the model.
+
+#+NAME: beta-binom-convert
+#+BEGIN_SRC python :eval never
+from symbolic_pymc.theano.pymc3 import model_graph
+from symbolic_pymc.theano.utils import canonicalize
+
+
+# Convert the PyMC3 graph into a symbolic-pymc graph
+fgraph = model_graph(model)
+
+# Perform a set of standard algebraic simplifications using Theano
+fgraph = canonicalize(fgraph, in_place=False)
+#+END_SRC
+
+Listing [[beta-binom-goal]] uses miniKanren to construct a
+goal, src_python[:eval never]{betabin_conjugateo}, that matches terms taking the
+form of Equation [[eqref:eq:beta-binom-model]] in the first argument and the
+resulting posterior of Equation [[eqref:eq:beta-binom-post]] in the second argument.
+It makes use of both meta objects and src_python[:eval never]{etuple}s.
+
+#+NAME: beta-binom-goal
+#+BEGIN_SRC python :eval never
+def betabin_conjugateo(x, y):
+    """Replace an observed Beta-Binomial model with an unobserved posterior Beta-Binomial model."""
+    obs_lv = var()
+
+    beta_size, beta_rng, beta_name_lv = var(), var(), var()
+    alpha_lv, beta_lv = var(), var()
+    # We use meta objects directly to construct the "pattern" we want to match
+    beta_rv_lv = mt.BetaRV(alpha_lv, beta_lv, size=beta_size, rng=beta_rng, name=beta_name_lv)
+
+    binom_size, binom_rng, binom_name_lv = var(), var(), var()
+    N_lv = var()
+    binom_lv = mt.BinomialRV(N_lv, beta_rv_lv, size=binom_size, rng=binom_rng, name=binom_name_lv)
+
+    # Here we use etuples for the output terms
+    obs_sum = etuple(mt.sum, obs_lv)
+    alpha_new = etuple(mt.add, alpha_lv, obs_sum)
+    beta_new = etuple(mt.add, beta_lv, etuple(mt.sub, etuple(mt.sum, N_lv), obs_sum))
+
+    beta_post_rv_lv = etuple(
+        mt.BetaRV, alpha_new, beta_new, beta_size, beta_rng, name=etuple(add, beta_name_lv, "_post")
+    )
+    binom_new_lv = etuple(
+        mt.BinomialRV,
+        N_lv,
+        beta_post_rv_lv,
+        binom_size,
+        binom_rng,
+        name=etuple(add, binom_name_lv, "_post"),
+    )
+
+    return lall(eq(x, mt.observed(obs_lv, binom_lv)), eq(y, binom_new_lv))
+
+#+END_SRC
+
+Finally, Listing [[beta-binom-run]] shows how the goal can be applied to the model's graph
+and how a new Theano graph and PyMC3 model is constructed from the output.
+
+#+NAME: beta-binom-run
+#+BEGIN_SRC python :eval never
+from symbolic_pymc.theano.pymc3 import graph_model
+
+
+q = var()
+res = run(1, q, betabin_conjugateo(fgraph.outputs[0], q))
+
+expr_graph = res[0].eval_obj
+fgraph_conj = expr_graph.reify()
+
+# Convert the Theano graph into a PyMC3 model
+model_conjugated = graph_model(fgraph_conj)
+#+END_SRC
+
+A more thorough walk-through of src_python[:eval never]{symbolic-pymc} and
+miniKanren--using TensorFlow graphs--is given in
+[[citet:WillardTourSymbolicPyMC2020]].
 
 :TODO:
-- A more “Pythonic” miniKanren implementation with constraints [[citep:Hemannframeworkextendingmicrokanren2017]]
-  - [[https://github.com/pythological/kanren][src_python[:eval never]{kanren}]]
-- Reaching the broader scientific computing and data science crowd via Python
-- Hurdles due to no recursion support (e.g. no TCO),
-  - Manually designed trampolines to overcome src_python[:eval never]{RecursionError}s
-- A walk-through using src_python[:eval never]{kanren} using TensorFlow is given in [[citet:WillardTourSymbolicPyMC2020]]
-- Build around/on top of the tensor-libraries-of-the-year while maintaining some portability to the relations (i.e. effectively decouple relations from underlying graph libraries)
-- The need for symbolic DSLs to work for modeler’s and not just the developers
-  - Exploratory tools used by the domain expert for research
-    - E.g. show me all the ways that a model can be reformulated under mixture representations
-- Relational expression manipulation and its value to statistical modeling
-- Build libraries of the *relations* that underly numeric stability "tricks" (e.g. STAN funnel example), that generate custom samplers for a given model
+  - Hurdles due to no recursion support (e.g. no TCO),
+    - Manually designed trampolines to overcome src_python[:eval never]{RecursionError}s
+  - Build around/on top of the tensor-libraries-of-the-year while maintaining some portability to the relations (i.e. effectively decouple relations from underlying graph libraries)
+  - The need for symbolic DSLs to work for modeler’s and not just the developers
+    - Exploratory tools used by the domain expert for research
+      - E.g. show me all the ways that a model can be reformulated under mixture representations
+  - Relational expression manipulation and its value to statistical modeling
+  - Build libraries of the *relations* that underly numeric stability "tricks" (e.g. STAN funnel example), that generate custom samplers for a given model
 :END:
 * What's needed from/in miniKanren
 - In general, for miniKanren to fulfill these purposes, it needs to be combined with some standard applied term rewriting features

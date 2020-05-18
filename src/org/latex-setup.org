@@ -36,6 +36,9 @@
 #+LaTeX_HEADER_EXTRA: \newlength{\maxtabfigwidth}
 #+LaTeX_HEADER_EXTRA: \newlength{\maxtabfigheight}
 
+# Better auto-scaling braces, brackets, etc.
+#+LaTeX_HEADER_EXTRA: \usepackage{mleftright}
+
 # This is needed for strict float placement (i.e. 'H')
 # #+LaTeX_HEADER_EXTRA: \usepackage{float}
 
