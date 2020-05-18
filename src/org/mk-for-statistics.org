@@ -74,7 +74,7 @@ communities within each that acknowledge the importance of broader symbolic
 computation and are gradually developing toward Theano's earlier example
 [[citep:LarsenTensorFlowGraphOptimizations2019a]].
 
-Outside of tensor libraries, projects [[citep:JAX2020]] are approaching similar
+Outside of tensor libraries, projects like JAX [[citep:JAX2020]] approach similar
 symbolic-oriented operations by way of traced Python code and Python AST.
 
 Overall, at this point in time, there is a fairly well established set of modern
@@ -118,7 +118,7 @@ integration within other systems.
 We simply want a framework within which we can automate "optimizations" specific
 to the domains of statistical modeling and machine learning.  We would like this
 framework to have the properties outlined in Section
-[[#sec:intro-symbolic-computation]] and building upon the well established Python
+[[#sec:intro-symbolic-computation]] and build upon the well established Python
 machine learning and statistics ecosystem.
 
 These automations should be usable internally by new and existing projects to
@@ -126,16 +126,21 @@ drive more advanced automations, as well as *interactively* by researchers
 interested in developing new model estimation techniques.  In the latter
 capacity, the framework we describe is more akin to the standard symbolic
 mathematics offerings; however, this consideration should only emphasize the
-degree to which the framework is expected to integrate with existing offerings,
-since we expect this integration to equally apply to existing symbolic
-mathematics libraries.
+degree to which the framework we desire is expected to integrate with existing
+libraries, since we expect this integration to apply equally to existing
+symbolic mathematics libraries.
 
 Now, let's consider statistical modeling explicitly.
 
-Statistical modeling surprisingly amenable to symbolic methods--and especially
-when one is working within the context of Bayesian models.  Just within the
-realm of sample-based model estimation, there are numerous principles and
-generalized results that are applicable to large classes of models.
+Statistical modeling is surprisingly amenable to symbolic methods
+[[citep:CaretteModelmanipulationpart2007,
+CaretteSimplifyingProbabilisticPrograms2016]]--and especially when one is
+working within the more restricted context of Bayesian models
+[[citep:ShanExactBayesianInference2017]], where a fundamental principle called
+"conjugacy" [[citep:robert_bayesian_2007][Chapter 3.3]] is often used and entirely amenable
+to simple pattern matching.  Just within the realm of sample-based model
+estimation, there are numerous principles and generalized results that are
+applicable to large classes of models.
 
 Regarding principles, one of the most basic is Rao-Blackwellization.
 Rao-Blackwellization is derived from the Rao-Blackwell Theorem
@@ -184,7 +189,7 @@ Rao-Blackwellization.
 
 This general idea mirrors the approaches used by modern symbolic integration
 systems themselves.  When such systems employ Fox H and Meijer G functions
-[[citep:peasgood_method_2009]] [[citep:roach_meijer_1997]], they are effectively
+[[citep:peasgood_method_2009, roach_meijer_1997]], they are effectively
 using only a few simple algebraic convolution relations applying to broad
 classes of hypergeometric functions.  While those systems are intended to reach
 a much greater number of functions, a majority of the work being done by
@@ -282,39 +287,42 @@ research.
 
 Computer science researchers have been--and continue to--actively pursue topics
 in symbolic computation specifically for the area of statistical modeling
-[[citep:Waliahighlevelinferencealgorithms2018]]
-[[citep:GorinovaAutomaticReparameterisationProbabilistic]]
-[[citep:SatoFormalverificationhigherorder2018]],
-[[citep:ShanExactBayesianInference2017]].  Unfortunately, much of this work
-takes the form of entirely new languages and very specialized high-level
-semantics that do not lend well to adoption by experts in the areas of
-statistical modeling and methods.  This limitation severely restricts the
-efficacy of such systems and their implementations by requiring that they solve
-notoriously difficult symbolic problems in order to compete with simple
-patchworks of software that implement relatively narrow specialized methods.
+[[citep:Waliahighlevelinferencealgorithms2018,
+GorinovaAutomaticReparameterisationProbabilistic,
+SatoFormalverificationhigherorder2018, ShanExactBayesianInference2017]].
+Unfortunately, much of this work takes the form of entirely new languages and
+very specialized high-level semantics that do not lend well to adoption by
+experts in the areas of statistical modeling and methods.  This limitation
+severely restricts the efficacy of such systems and their implementations by
+requiring that they solve notoriously difficult symbolic problems in order to
+compete with simple patchworks of software that implement relatively narrow
+specialized methods.
 
-Put another way, a statistician could easily specify an efficient slice sampler for
-classes of sparsity priors--like the Horseshoe and Horseshoe+ priors
-[[citep:BhadraDefaultBayesiananalysis2016]]--or a generalized symbolic system
-could attempt to derive such slice samplers through first principles.
+Put another way, it's like the two extremes mentioned earlier, where--in this
+case--a statistician could specify an efficient slice sampler for a class
+of sparsity priors--like the Horseshoe and Horseshoe+ priors
+[[citep:BhadraDefaultBayesiananalysis2016]]--or use a generalized symbolic
+system that attempts to derive such slice samplers through first principles.
 Unfortunately, the latter falls within a set of well known and extremely
 difficult problems in symbolic mathematics, AI, and computer science in general
-(e.g. automatic theorem proving).
+(e.g. automatic theorem proving), and the former leads to a zoo of inflexible
+software packages that can rarely be combined and that alone provide only marginal
+utility.
 
-
-Much of the same can be said about research in symbolic computation in the
-context of tensor algebra.  In these cases, efforts tend to focus more on
-characterizations of term rewriting systems that are specific to a
-given set of relations (albeit rarely--if ever--framed as relations),
-methods, and programming languages or libraries within the domain of interest.
-For example, there's rewriting work specific to automatic conjugation
-[[citep:HoffmanAutoconjRecognizingExploiting2018]] in Python, neural
-network-specific DSLs and frameworks [[citep:WeiDLVMmoderncompiler2017]],
-[[citep:VasilacheTensorComprehensionsFrameworkAgnostic2018]], specialized tensor
-calculi [[citep:MullinTensorsndArrays2009]], etc.  Given the degree of
-specialization in this area of work, few--if any--of the resulting frameworks or
-implementations provide an apparent benefit to more than a couple of the
-objectives stated in Section [[#sec:want-to-do]].
+Much of the same can be said about work in symbolic computation for
+tensor algebra.  In these cases, efforts tend to focus more on new characterizations
+of standard term rewriting that are too restrictive in their use and concern for
+very specific sets of relations (albeit rarely--if ever--realized as actual
+relations), methodologies, and programming languages.  For example, there's
+platform-specific rewriting work for automatic conjugation
+[[citep:HoffmanAutoconjRecognizingExploiting2018]] in Python that works off
+of a specially designed term rewriting mechanism called "interception", neural
+network-specific DSLs and frameworks [[citep:WeiDLVMmoderncompiler2017,
+VasilacheTensorComprehensionsFrameworkAgnostic2018]], specialized tensor calculi
+[[citep:MullinTensorsndArrays2009]], etc.  Given the degree of specialization in
+this area of work, few--if any--of the resulting frameworks or implementations
+provide an apparent benefit to more than a couple of the objectives stated in
+Section [[#sec:want-to-do]].
 
 In general, work that reformulates--or even implicitly obfuscates--the well
 established underlying frameworks and mechanics behind the relevant symbolic
@@ -323,14 +331,13 @@ clear theoretical, conceptual, and/or implementation advantages.  Essentially,
 there should be a good reason for adding conceptual barriers to established
 areas of symbolic computation.
 
-
-Instead, we believe it would be more immediately constructive to further the
-development of lightweight symbolic tools that are flexible with respect to the programming
-language requirements, address the unavoidable theoretical underpinnings
-(e.g. term rewriting, unification) in a minimally sufficient way, and easily
-allow for arbitrary low-level interventions at the implementation level.  Such a
-context would be much more conducive to the growth of extensible logic and code
-that operates at the statistical modeling level.
+Instead, we believe it's more immediately constructive to further the
+development of lightweight symbolic tools that are flexible with respect to the
+programming language requirements, address the unavoidable and important theoretical
+underpinnings (e.g. term rewriting, unification) in a minimally sufficient way,
+and easily allow for arbitrary low-level interventions at the implementation
+level.  Such a context would be much more conducive to the growth of extensible
+logic and code.
 
 This is where miniKanren comes in.  It serves as a minimal, lightweight
 relational DSL that orchestrates unification and reification
@@ -341,16 +348,18 @@ instance, its preexisting use in type theory automatically provides exciting
 connections to both basic and cutting-edge symbolic computation (e.g. theorem
 proving [[citep:NearalphaleanTAPDeclarativeTheorem2008]]).
 
-miniKanren inherently provides a degree of high-level portability and low-level flexibility.
-Relations can be built on top of other relations, and--dependent on the degree
-of host language-specificity--it can be quite clear how the relations can be implemented in
-another host language.  This is exactly the type of generality that could
-provide the basis for a less language-specific community of applied mathematical
-statistics optimizations.
+miniKanren inherently provides a degree of high-level portability and low-level
+flexibility.  Relations can be built on top of other relations, and--dependent
+on the degree of host language-specificity--it can be quite clear how
+relations can be implemented in other host languages.  This is exactly the type
+of generality that provides the basis for a less language-specific
+community of applied mathematics and statistics-based optimizations.
 
 Likewise, when performance is absolutely necessary, it's easy to implement
-relations directly in the host language.  This is true for more than just
-individual relations.
+relations directly in the host language.
+
+In the following section, we will illustrate these points
+using a Python implementation of miniKanren.
 
 * Symbolic Computation in Python Driven by miniKanren
 
