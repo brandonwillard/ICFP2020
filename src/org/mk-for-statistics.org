@@ -1,4 +1,4 @@
-#+TITLE: miniKanren for Statistical Computation
+#+TITLE: miniKanren and Statistical Computation
 #+AUTHOR: Brandon T. Willard
 #+DATE: 2020-05-09
 #+EMAIL: brandonwillard@gmail.com
@@ -27,9 +27,12 @@
 #+PROPERTY: header-args:latex :results raw replace :exports results :eval yes
 
 #+BEGIN_abstract
-This article attempts to provide an overview of the current use and future
-potential of symbolic computation among the statistical modeling community in
-Python and the increasingly important role that miniKanren could fill within it.
+This article provides a brief overview of the current use and future potential
+of symbolic computation within the statistical modeling and machine learning
+community of Python.  It details the use of miniKanren as an underlying
+framework for term rewriting on top of existing Python libraries and its unique
+potential for exciting cross-overs between the currently disparate areas of
+statistical modeling and programming language theory.
 #+END_abstract
 
 * Introduction
@@ -37,44 +40,244 @@ Python and the increasingly important role that miniKanren could fill within it.
 - PPLs are often backed by "Tensor libraries"
 - Tensor libraries are the somewhat more modern equivalents of LAPACK and BLAS-type offerings.
 - They use symbolic graphs
-* Symbolic computation (covertly) on the rise
-- The symbolic computation behind the Deep Learning libraries (e.g. Theano, TensorFlow, Torch)
-- Automatic Differentiation (AD) is/was the focus, but it's also been on linear algebra relations
-- Explicit examples in Theano (e.g. unification and optimizations in Theano)
-- TensorFlow is still trying to catch up (e.g. Grappler)
-- Composable transforms for differentiation, vectorization, GPU acceleration, etc.: [[https://github.com/google/jax][JAX]]
-* What we want to do
+* Symbolic Computation in Modern Statistics and Machine Learning
+:PROPERTIES:
+:CUSTOM_ID: sec:intro-symbolic-computation
+:END:
+There is an appreciable amount of symbolic computation behind the standard Deep
+Learning libraries of today, like Theano [[citep:bergstra_theano:_2010]],
+TensorFlow [[citep:TensorFlow2020]], and PyTorch [[citep:PyTorch2020]].
+
+At the very least, these libraries provide classes that represent tensor algebra
+in graphical form and functions that manipulate graphs.  Furthermore, these
+graphs are used to compute derivatives--via Automatic Differentiation (AD),
+parallelize or vectorize operations, and, in limited cases, explicitly perform
+algebraic simplifications.
+
+Regardless of whether or not you're in a camp that says AD falls well within
+standard symbolic mathematics, these libraries are undoubtedly performing
+symbolic calculations, and most of them are on a path toward even more symbolic
+computation and outright symbolic mathematics.
+
+Theano's optimizations are perhaps the best example of this.  It provides an
+entire subsystem for incorporating "graph optimizations" that effectively employ
+common algebraic simplifications.  Ultimately, this optimization systems is a
+mix of standard term rewriting and symbolic algebra (e.g. pattern matching, term
+substitutions, common subset elimination, graph traversal strategies,
+fixed-point operators, etc.)
+
+Although Theano is the older and more established tensor library and has easily
+demonstrated the efficacy of its optimizations, TensorFlow and others do not
+appear to have nearly as much design and development focus in the areas of
+symbolic mathematics and term rewriting.  Even so, there are projects and
+communities within each that acknowledge the importance of broader symbolic
+computation and are gradually developing toward Theano's earlier example
+[[citep:LarsenTensorFlowGraphOptimizations2019a]].
+
+Outside of tensor libraries, projects [[citep:JAX2020]] are approaching similar
+symbolic-oriented operations by way of traced Python code and Python AST.
+
+Overall, at this point in time, there is a fairly well established set of modern
+machine learning and statistical modeling libraries that are all fundamentally
+built upon the basics of symbolic manipulation of graphs representing
+tensor/linear algebra operations.  They all vary in the degree to which they
+implement symbolic mathematics or programmatically encode the underlying
+high-level mathematics.  Regardless, the case for more advanced symbolic
+computation and mathematics is slowing being made by multiple influential
+projects, and there's already enough reason and prior work to start assessing
+the directions this could go, and how we might get the most out of it.
+
+Ideally, symbolic work within the machine learning and statistical modeling
+community would progress by developing constructively on top of well established
+projects, so that quality code can be reused, existing expertise can be
+leveraged, and community involvement from domain experts is easily incorporated.
+
+Within the Python community, [[citet:RocklinMathematicallyinformedlinear2013]]
+states this sentiment with regards to the intelligent use of optimized linear
+algebra functions and the basics of term rewriting.  This work follows the same
+principles, but focuses on the areas of statistical modeling and, more
+specifically, Bayesian modeling.  Still, in order to reach the area of
+statistical modeling, the same foundational properties are required: flexible,
+compartmentalized, and open systems that are easily integrated with established
+libraries and map well to their high-level abstractions.
+
+Most symbolic mathematics libraries do not have these properties.  Instead, they
+require one to work entirely within the limited ecosystems they provide, and, as
+a result restrict their application within more advanced--albeit narrower--libraries
+that specialize in, say, tensor algebra.  Often, only a small portion of a
+symbolic mathematics library's functionality is relevant, but it isn't possible
+to use these portions independently.  Worse yet, some libraries are literally
+their own programming languages and present an unjustifiable barrier to their
+integration within other systems.
+
+* What we want to do in Statistical Modeling
 :PROPERTIES:
 :CUSTOM_ID: sec:want-to-do
 :END:
 
-- Generally, we want to automate domain specific "optimizations".
-  - [[citep:CasellaRaoBlackwellisationsamplingschemes1996]]
-- Statistical modeling surprisingly amenable to symbolic methods--and especially the Bayesian variety
-  - Existing software solutions with symbolic components:
-    - PPLs capitalize on AD and essentially only one MCMC approach (Hamiltonian Monte Carlo), with "automated" conditioning transforms
-    - BUGS and JAGS are more like expert systems that use slice sampling
-      - Example/description, mention the algebra going into it
-    - [[https://github.com/pymc-devs][PyMC]] [[citep:SalvatierProbabilisticprogrammingPython2016]] automatically recommends which sampler to use based on properties of the model
-  - [[citet:CaretteModelmanipulationpart2007]] provides some high-level illustrations of how symbolic computation is/can be used in statistical modeling
-- General function optimization is also amenable to symbolic computation, especially in the statistical domain
-  - Convex Analysis and Proximal Algorithms are amenable to simple expert-like systems [[citep:HamiltonSymbolicconvexanalysis2005]]
-  - Description of symbolic computation for Proximal Algorithms in [[citet:WillardRoleSymbolicComputation2017]]
-    - Use tables + connecting properties, theorems to cover a large number of model + method combinations, like symbolic integration using tabled special functions [[citep:peasgood_method_2009]] [[citep:roach_meijer_1997]]
-    - Symbolic computation of Fenchel conjugates [[citep:bauschke_symbolic_2006]]
-  - The domain specific optimizations can be applied in combination with these basic symbolic function optimizations
-- Relations succinctly detail the differences between a large variety of samplers and optimization routines
-  - Theorems in probability theory, transformations, etc., are relations
-    - [[citet:GelmanTransformingparameterssimple2019]]
-  - Scale mixture representations that lead to efficient samplers [[citep:BhadraDefaultBayesiananalysis2016]]
-  - Parameter expansion [[citep:scott_parameter_2010]]
-  - Examples/description
-    - STAN reformulation example stated as a simple relation [[citep:WillardAutomaticRecenteringRescaling]]
-- Basics of term rewriting [[citep:BaaderTermrewritingall1999]]
-- Provide a lighter-weight, domain-specific collection of relations for interactive and automated use
-  - For example, help automate symbolic manipulation in [[citet:BhadraHorseshoeEstimatorUltraSparse2016]] and
-    improve the research process
-  - Akin to the functions grimoire of [[citet:Johanssonfungrim2020]]
+We simply want a framework within which we can automate "optimizations" specific
+to the domains of statistical modeling and machine learning.  We would like this
+framework to have the properties outlined in Section
+[[#sec:intro-symbolic-computation]] and building upon the well established Python
+machine learning and statistics ecosystem.
+
+These automations should be usable internally by new and existing projects to
+drive more advanced automations, as well as *interactively* by researchers
+interested in developing new model estimation techniques.  In the latter
+capacity, the framework we describe is more akin to the standard symbolic
+mathematics offerings; however, this consideration should only emphasize the
+degree to which the framework is expected to integrate with existing offerings,
+since we expect this integration to equally apply to existing symbolic
+mathematics libraries.
+
+Now, let's consider statistical modeling explicitly.
+
+Statistical modeling surprisingly amenable to symbolic methods--and especially
+when one is working within the context of Bayesian models.  Just within the
+realm of sample-based model estimation, there are numerous principles and
+generalized results that are applicable to large classes of models.
+
+Regarding principles, one of the most basic is Rao-Blackwellization.
+Rao-Blackwellization is derived from the Rao-Blackwell Theorem
+[[citep:CasellaRaoBlackwellisationsamplingschemes1996]], which states that
+analytically computed conditional expectations outperform their un-integrated
+counterparts.  It applies in a rather general sense to numerous Markov Chain
+Monte Carlo methods, but it's automation is something that falls well outside of
+most applied libraries due to its symbolic computation requirements.
+
+Those requirements aren't necessarily on the means or requirements of symbolic
+computation as much as they are on the breadth of coverage.  For instance, if
+one wants to apply as much Rao-Blackwellization as possible, they would have to
+employ a state-of-the-art symbolic integration routine over arbitrary integrals
+implied by the applicable statistical models.  At the level of (nearly) arbitrary
+integrals, this problem is notoriously difficult.
+
+Instead, it would be much more convenient and approachable to establish
+higher-level relationships that are well known to practitioners and cover
+specific classes of models or distributions, then combine those in a way that
+boosts their coverage over time.  This is something between the extreme
+of enumerate explicit simplifications for each and every possible model and
+stating extremely general axioms from which these simplifications can be
+derived.  We like to constructively navigate those two extremes.
+
+For instance, Rao-Blackwellizations appearing in published material is often
+driven by high-level *relations*.  Some of those relations involve basic theorems
+in probability theory like the following algebraic fact about the sum of
+Gaussian random variables:
+#+BEGIN_SRC latex
+\begin{equation}
+  \label{eq:sum-of-normals}
+  \begin{gathered}
+    X + Y = Z
+    \\
+    X \sim \operatorname{N}\mleft(\mu_x, \sigma_x^2\mright), \quad
+    Y \sim \operatorname{N}\mleft(\mu_y, \sigma_y^2\mright), \quad
+    Z \sim \operatorname{N}\mleft(\mu_x + \mu_y, \sigma_x^2 + \sigma_y^2\mright)
+  \end{gathered}
+\end{equation}
+#+END_SRC
+
+There are numerous examples like [[eqref:eq:sum-of-normals]], and they all take the
+form of relations.  Simple algebraic relations like these can be combined to
+produce derivations that effectively state the closed-form integrals underlying
+Rao-Blackwellization.
+
+This general idea mirrors the approaches used by modern symbolic integration
+systems themselves.  When such systems employ Fox H and Meijer G functions
+[[citep:peasgood_method_2009]] [[citep:roach_meijer_1997]], they are effectively
+using only a few simple algebraic convolution relations applying to broad
+classes of hypergeometric functions.  While those systems are intended to reach
+a much greater number of functions, a majority of the work being done by
+statistical modeling systems deals with a much smaller set of standard
+distributions.
+
+Currently, statistical modeling systems do not cater to these types of
+additions, nor do they attempt to employ general optimizations like
+Rao-Blackwellization.  Instead, this kind of work is still restricted to the
+user-level, where it is performed by hand and used as input to the system.  At
+the present, the best systems simply provide such relations as advice in their
+manuals and message boards.
+
+In particular, STAN [[citep:standevelopmentteam_stan_2014]] is well known for
+providing a popular manual that advises user-level manipulations to account for
+common sampling issues arising from poorly specified models and the deficiencies
+of the sampling approach it implements
+[[citet:GelmanTransformingparameterssimple2019]].  Among those is the classic
+pathological "funnel" model of [[citet:neal_slice_2003]].  This model can be
+reparameterized using the following basic relation between a standard Gaussian
+random variable and its affine transform:
+#+BEGIN_SRC latex
+\begin{equation}
+  \label{eq:normal-affine-trans}
+  \begin{gathered}
+    X = \mu + \sigma Y,
+    \\
+    X \sim \operatorname{N}\mleft( \mu, \sigma^2 \mright),\quad
+    Y \sim \operatorname{N}\mleft( 0, 1 \mright),\quad
+  \end{gathered}
+\end{equation}
+#+END_SRC
+
+Under the left-to-right application of Equation [[eqref:eq:normal-affine-trans]],
+the funnel model exhibits much better sampling properties.
+
+We would like to see relations like these used within statistical modeling
+systems, so that model specification is more flexible and less brittle with
+respect to the exact specification of a model.  Systems like the aforementioned
+STAN and the Python based PyMC
+[[citep:SalvatierProbabilisticprogrammingPython2016]] are also known as
+Probabilistic Programming Languages (PPLs), and, as such, their place as
+interpreted languages is rather clear.  In line with most programmatically
+interpreted languages, compilation can be used to improve performance
+and--simultaneously--the expressive potential of the syntax.
+
+Projects like STAN and PyMC rely almost exclusively on AD and have more or less
+superseded older projects based on different, non-gradient-based generalized
+methodologies, like BUGS [[citep:LunnBUGSprojectEvolution2009]].  BUGS used some
+of the domain-specific relations implied here to construct a surprisingly robust
+expert-like system that would automatically construct a slice sampler for a
+given model.  We would like to see approaches like this enhanced by the symbolic tools
+described here *and* the tensor libraries now providing AD to many of these newer
+modeling systems.
+
+One noteworthy example would involves PyMC's logic for determining which sampler
+is used.  Just like the optimization system in Theano, a the graph of a PyMC model
+could be manipulated to produce a more suitable, yet equivalent, model for a given
+sampler, or--conversely--produce a customized sampler for a given model.
+In extreme cases (an example of which is provide in a later section), the posterior
+distribution ultimately estimated by PyMC could be returned in closed-form.
+
+Otherwise, there are entire classes of efficient, model-specific samplers that
+are out of these PPLs' reach, and the addition of some straight-forward and
+flexible term rewriting capabilities would make them immediately available.
+Some examples involve basic Gibbs samplers, scale mixture representations that
+lead to efficient samplers for sparsity priors
+[[citep:BhadraDefaultBayesiananalysis2016]] and non-Gaussian models
+[[citep:polson_bayesian_2013]], and parameter expansions
+[[citep:scott_parameter_2010]].
+
+The missing functionality that would drive any automated application of these
+methods is essentially falls within the domain of term rewriting
+[[citep:BaaderTermrewritingall1999]].  Even the algebraic optimizations
+currently employed by modern tensor libraries are fundamentally limited by the
+basic choices and challenges covered by term rewriting.  Due to these basic
+challenges, the work described above will most likely need more flexibility than
+not in the way it navigates the space of applied term rewriting.  Instead of
+making bold choices in how term rewriting operations are expressed and
+implemented, it will need to avoid a development path that produces little in
+the way of reusable work.  It will also need to exist in a form that's at least
+recognizable to people working in the related fields of term rewriting; that way,
+there's more potential for immediate cross-over.
+
+To reiterate, we envision a light-weight means of establishing collections of
+domain-specific relations for interactive and automated use.  These relations
+can be created, used, and refined directly by the experts that work with or
+develop them and then deployed in sophisticated systems that are jointly
+developed by experts in term rewriting, type theory, code synthesis, and related
+research.
+# Analogous efforts can be seen in projects like the functions grimoire of
+# [[citet:Johanssonfungrim2020]].
+
 * Where miniKanren fits in
 
 Computer science researchers have been--and continue to--actively pursue topics

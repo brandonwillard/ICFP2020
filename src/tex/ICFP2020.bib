@@ -20,6 +20,16 @@
   number = {1}
 }
 
+@inproceedings{bergstra_theano:_2010,
+  title = {Theano: A {{CPU}} and {{GPU Math Expression Compiler}}},
+  booktitle = {Proceedings of the {{Python}} for {{Scientific Computing Conference}} ({{SciPy}})},
+  author = {Bergstra, James and Breuleux, Olivier and Bastien, Fr{\'e}d{\'e}ric and Lamblin, Pascal and Pascanu, Razvan and Desjardins, Guillaume and Turian, Joseph and {Warde-Farley}, David and Bengio, Yoshua},
+  year = {2010},
+  month = jun,
+  address = {{Austin, TX}},
+  abstract = {Theano is a compiler for mathematical expressions in Python that combines the convenience of NumPy's syntax with the speed of optimized native machine language. The user composes mathematical expressions in a high-level description that mimics NumPy's syntax and semantics, while being statically typed and functional (as opposed to imperative). These expressions allow Theano to provide symbolic differentiation. Before performing computation, Theano optimizes the choice of expressions, translates them into C++ (or CUDA for GPU), compiles them into dynamically loaded Python modules, all automatically. Common machine learning algorithms implemented with Theano are from 1.6\texttimes{} to 7.5\texttimes{} faster than competitive alternatives (including those implemented with C/C++, NumPy/SciPy and MATLAB) when compiled for the CPU and between 6.5\texttimes{} and 44\texttimes{} faster when compiled for the GPU. This paper illustrates how to use Theano, outlines the scope of the compiler, provides benchmarks on both CPU and GPU processors, and explains its overall design.}
+}
+
 @article{BhadraDefaultBayesiananalysis2016,
   title = {Default Bayesian analysis with global-local shrinkage priors},
   author = {Bhadra, Anindya and Datta, Jyotishka and Polson, Nicholas G. and Willard, Brandon},
@@ -109,16 +119,6 @@
   urldate = {2020-05-16}
 }
 
-@misc{googlejax2020,
-  title = {Google/Jax},
-  year = {2020},
-  month = may,
-  url = {https://github.com/google/jax},
-  urldate = {2020-05-11},
-  abstract = {Composable transformations of Python+NumPy programs: differentiate, vectorize, JIT to GPU/TPU, and more},
-  howpublished = {Google}
-}
-
 @article{GorinovaAutomaticReparameterisationProbabilistic,
   title = {Automatic {{Reparameterisation}} in {{Probabilistic Programming}}},
   author = {Gorinova, Maria I. and Moore, Dave and Hoffman, Matthew D.}
@@ -166,6 +166,16 @@
   pages = {10737--10747}
 }
 
+@misc{JAX2020,
+  title = {{{JAX}}},
+  year = {2020},
+  month = may,
+  url = {https://github.com/google/jax},
+  urldate = {2020-05-11},
+  abstract = {Composable transformations of Python+NumPy programs: differentiate, vectorize, JIT to GPU/TPU, and more},
+  howpublished = {Google}
+}
+
 @misc{Johanssonfungrim2020,
   title = {Fungrim},
   author = {Johansson, Fredrik},
@@ -175,6 +185,13 @@
   urldate = {2020-05-16},
   abstract = {Fungrim: the Mathematical Functions Grimoire.},
   copyright = {MIT}
+}
+
+@article{LarsenTensorFlowGraphOptimizations2019a,
+  title = {{{TensorFlow Graph Optimizations}}},
+  author = {Larsen, Rasmus Munk and Shpeisman, Tatiana},
+  year = {2019},
+  url = {https://research.google/pubs/pub48051/}
 }
 
 @article{LukasiewiczProbabilisticlogicprogramming2001,
@@ -187,6 +204,18 @@
   urldate = {2017-01-17},
   journal = {ACM Transactions on Computational Logic (TOCL)},
   number = {3}
+}
+
+@article{LunnBUGSprojectEvolution2009,
+  title = {The {{BUGS}} Project: {{Evolution}}, Critique and Future Directions},
+  shorttitle = {The {{BUGS}} Project},
+  author = {Lunn, David and Spiegelhalter, David and Thomas, Andrew and Best, Nicky},
+  year = {2009},
+  volume = {28},
+  pages = {3049--3067},
+  publisher = {{Wiley Online Library}},
+  journal = {Statistics in medicine},
+  number = {25}
 }
 
 @article{MullinTensorsndArrays2009,
@@ -204,6 +233,16 @@
   journal = {arXiv:0907.0796 [cs]},
   keywords = {Computer Science - Data Structures and Algorithms,Computer Science - Mathematical Software},
   primaryClass = {cs}
+}
+
+@article{neal_slice_2003,
+  title = {Slice Sampling},
+  author = {Neal, Radford M.},
+  year = {2003},
+  pages = {705--741},
+  url = {http://www.jstor.org/stable/3448413},
+  urldate = {2015-11-11},
+  journal = {Annals of statistics}
 }
 
 @inproceedings{NearalphaleanTAPDeclarativeTheorem2008,
@@ -235,6 +274,30 @@
   note = {Library Catalog: www.python.org}
 }
 
+@article{polson_bayesian_2013,
+  title = {Bayesian Inference for Logistic Models Using {{P{\'o}lya}}\textendash{{Gamma}} Latent Variables},
+  author = {Polson, Nicholas G. and Scott, James G. and Windle, Jesse},
+  year = {2013},
+  volume = {108},
+  pages = {1339--1349},
+  url = {http://www.tandfonline.com/doi/abs/10.1080/01621459.2013.829001},
+  urldate = {2015-07-24},
+  journal = {Journal of the American Statistical Association},
+  keywords = {logistic regression,polya-gamma},
+  number = {504}
+}
+
+@misc{PyTorch2020,
+  title = {{{PyTorch}}},
+  year = {2020},
+  month = may,
+  url = {https://github.com/pytorch/pytorch},
+  urldate = {2020-05-18},
+  abstract = {Tensors and Dynamic neural networks in Python with strong GPU acceleration},
+  howpublished = {pytorch},
+  keywords = {autograd,deep-learning,gpu,machine-learning,neural-network,numpy,python,tensor}
+}
+
 @inproceedings{roach_meijer_1997,
   title = {Meijer {{G}} Function Representations},
   booktitle = {Proceedings of the 1997 International Symposium on {{Symbolic}} and Algebraic Computation},
@@ -242,6 +305,15 @@
   year = {1997},
   pages = {205--211},
   publisher = {{ACM}}
+}
+
+@phdthesis{RocklinMathematicallyinformedlinear2013,
+  title = {Mathematically Informed Linear Algebra Codes through Term Rewriting},
+  author = {Rocklin, Matthew},
+  year = {2013},
+  url = {http://people.cs.uchicago.edu/~mrocklin/storage/dissertation.pdf},
+  urldate = {2016-09-20},
+  school = {PhD Thesis, August}
 }
 
 @misc{Rocklinmultipledispatch2019,
@@ -299,9 +371,28 @@
   series = {{{POPL}} 2017}
 }
 
+@book{standevelopmentteam_stan_2014,
+  title = {Stan: {{A C}}++ {{Library}} for {{Probability}} and {{Sampling}}, {{Version}} 2.2},
+  author = {{Stan Development Team}},
+  year = {2014},
+  url = {http://mc-stan.org/}
+}
+
 @article{SwordsGuidedSearchminiKanren,
   title = {Guided {{Search}} in {{miniKanren}}},
   author = {Swords, Cameron and Friedman, Daniel P.}
+}
+
+@misc{TensorFlow2020,
+  title = {{{TensorFlow}}},
+  year = {2020},
+  month = may,
+  url = {https://github.com/tensorflow/tensorflow},
+  urldate = {2020-05-18},
+  abstract = {An Open Source Machine Learning Framework for Everyone},
+  copyright = {Apache-2.0},
+  howpublished = {Google},
+  keywords = {deep-learning,deep-neural-networks,distributed,machine-learning,ml,neural-network,python,tensorflow}
 }
 
 @article{VasilacheTensorComprehensionsFrameworkAgnostic2018,
