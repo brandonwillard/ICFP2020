@@ -930,6 +930,8 @@ miniKanren--using TensorFlow graphs--is given in
   - Some type of goal "compilation"
   - Could be related to, or involve, completion
 * Discussion
+- Mention non-statistical symbolic computation with miniKanren in Python (e.g. like the Hy example in [[citet:WillardReadableStringsRelational2018b]])
+- Look into the cross-overs with "inference engines" (e.g. the Rete algorithm)
 - New symbolic "platforms" are being developed all the time and implementing
   sophisticated symbolic logic is becoming more challenging and risky, which
   disincentives such efforts
@@ -937,7 +939,6 @@ miniKanren--using TensorFlow graphs--is given in
 - We need a light-weight suitable platform for symbolic, math-level work that doesn't force us to compromise existing platforms or shoehorn abstractions
 - Are there aspects of miniKanren that lend well (or otherwise) to more advanced--and relevant--term rewriting capabilities?
   - Relational completion, completion for non-terminating rewrite systems
-- This work is being done across [[https://github.com/pymc-devs/symbolic-pymc][src_python[:eval never]{symbolic-pymc}]] and the [[https://github.com/pythological][Pythological]] packages.
 
 
 #+BIBLIOGRAPHYSTYLE: plainnat
