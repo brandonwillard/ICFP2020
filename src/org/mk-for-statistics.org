@@ -91,7 +91,7 @@ built upon the basics of symbolic manipulation of graphs representing
 tensor/linear algebra operations.  They all vary in the degree to which they
 implement symbolic mathematics or programmatically encode the underlying
 high-level mathematics.  Regardless, the case for more advanced symbolic
-computation and mathematics is slowing being made by multiple influential
+computation and mathematics is slowly being made by multiple influential
 projects, and there's already enough reason and prior work to start assessing
 the directions this could go, and how we might get the most out of it.
 
@@ -131,7 +131,7 @@ machine learning and statistics ecosystem.
 
 These automations should be usable internally by new and existing projects to
 drive more advanced automations, as well as *interactively* by researchers
-interested in developing new model estimation techniques.  In the latter
+interested in developing new model-estimation techniques.  In the latter
 capacity, the framework we describe is more akin to the standard symbolic
 mathematics offerings; however, this consideration should only emphasize the
 degree to which the framework we desire is expected to integrate with existing
@@ -169,7 +169,7 @@ Instead, it would be much more convenient and approachable to establish
 higher-level relationships that are well known to practitioners and cover
 specific classes of models or distributions, then combine those in a way that
 boosts their coverage over time.  This is something between the extreme
-of enumerate explicit simplifications for each and every possible model and
+of enumerating explicit simplifications for each and every possible model and
 stating extremely general axioms from which these simplifications can be
 derived.  We like to constructively navigate those two extremes.
 
@@ -254,7 +254,7 @@ described here *and* the tensor libraries now providing AD to many of these newe
 modeling systems.
 
 One noteworthy example would involves PyMC's logic for determining which sampler
-is used.  Just like the optimization system in Theano, a the graph of a PyMC model
+is used.  Just like the optimization system in Theano, the graph of a PyMC model
 could be manipulated to produce a more suitable, yet equivalent, model for a given
 sampler, or--conversely--produce a customized sampler for a given model.
 In extreme cases (an example of which is provide in a later section), the posterior
@@ -270,7 +270,7 @@ lead to efficient samplers for sparsity priors
 [[citep:scott_parameter_2010]].
 
 The missing functionality that would drive any automated application of these
-methods is essentially falls within the domain of term rewriting
+methods essentially falls within the domain of term rewriting
 [[citep:BaaderTermrewritingall1999]].  Even the algebraic optimizations
 currently employed by modern tensor libraries are fundamentally limited by the
 basic choices and challenges covered by term rewriting.  Due to these basic
