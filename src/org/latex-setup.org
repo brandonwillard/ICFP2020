@@ -1,7 +1,9 @@
-#+LaTeX_CLASS: amsart
+#+LaTeX_CLASS: acmart
+#+LaTeX_CLASS_OPTIONS: [10pt, authordraft=true, review=true]
+
 #+LaTeX_HEADER: \usepackage{amsmath}
 #+LaTeX_HEADER: \usepackage{amsfonts}
-#+LaTeX_HEADER: \usepackage{amssymb}
+# #+LaTeX_HEADER: \usepackage{amssymb}
 #+LaTeX_HEADER: \usepackage{amsthm}
 #+LaTeX_HEADER: \usepackage{setspace}
 #+LaTeX_HEADER: \usepackage{mathtools}
@@ -12,15 +14,14 @@
 
 #+LaTeX_HEADER: \include{math-commands}
 
-#+LaTeX_HEADER_EXTRA: \usepackage{todonotes}
-#+LATEX_HEADER_EXTRA: \usepackage{draftwatermark}
-#+LATEX_HEADER_EXTRA: \SetWatermarkScale{1}
-#+LATEX_HEADER_EXTRA: \SetWatermarkLightness{0.90}
+# #+LaTeX_HEADER_EXTRA: \usepackage{todonotes}
+# #+LATEX_HEADER_EXTRA: \usepackage{draftwatermark}
+# #+LATEX_HEADER_EXTRA: \SetWatermarkScale{1}
+# #+LATEX_HEADER_EXTRA: \SetWatermarkLightness{0.90}
 #+LATEX_HEADER_EXTRA: \definecolor{bg}{rgb}{0.95,0.95,0.95}
 
-#+LaTeX_HEADER_EXTRA: \definecolor{bg}{rgb}{0.95,0.95,0.95}
-
-#+LaTeX_HEADER_EXTRA: \usepackage[authoryear]{natbib}
+#+LaTeX_HEADER_EXTRA: \usepackage{natbib}
+#+LaTeX_HEADER_EXTRA: \citestyle{acmauthoryear}
 #+LaTeX_HEADER_EXTRA: \usepackage{cleveref}
 
 #+LaTeX_HEADER_EXTRA: \allowdisplaybreaks

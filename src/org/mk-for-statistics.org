@@ -1,17 +1,23 @@
-#+TITLE: miniKanren and Statistical Computation
+#+TITLE: miniKanren as a Tool for Symbolic Statistical Computation
 #+AUTHOR: Brandon T. Willard
 #+DATE: 2020-05-09
 #+EMAIL: brandonwillard@gmail.com
 #+FILETAGS: :minikanren:pymc:symbolic-pymc:statistics:relational-programming:
 
 #+STARTUP: hideblocks indent hidestars
+
 #+OPTIONS: author:t date:t ^:nil toc:nil title:t tex:t d:(not "todo" "logbook" "note" "testing" "notes") html-preamble:t
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 
 #+BEGIN_SRC elisp :eval yes :exports none :results silent
+;; Remove the automatically added `amssymb`; it has conflicts with `acmart`.
+(setq org-latex-default-packages-alist '())
+;; `acmart` wants `\maketitle` *after* the abstract, so we need to prevent
+;; org-mode from handling `\maketitle` itself and add it ourself.
+(setq org-latex-title-command "")
 (add-to-list 'org-latex-classes
-             '("amsart" "\\documentclass[11pt]{amsart}"
+             '("acmart" "\\documentclass[11pt]{acmart}"
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
@@ -34,6 +40,8 @@ framework for term rewriting on top of existing Python libraries and its unique
 potential for exciting cross-overs between the currently disparate areas of
 statistical modeling and programming language theory.
 #+END_abstract
+
+#+latex: \maketitle
 
 * Introduction
 - Probabilistic Programming Languages (PPLs) are DSLs that model elements of linear algebra and probability theory
@@ -390,6 +398,8 @@ approach isn't as natural or efficient as it is in Scheme.
 As Listing [[low-level-relations]] shows, a goal can take full advantage of the
 generator capabilities.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Example idioms for generator-based goals in Python.
 #+NAME: low-level-relations
 #+BEGIN_SRC python :eval never
 def relationo(*args):
@@ -482,6 +492,8 @@ Our Python implementation follows the approach of
 [[citet:Hemannframeworkextendingmicrokanren2017]] to implement a minimal
 constraint system in miniKanren.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Basic constraint goals example.
 #+NAME: constraints-example
 #+BEGIN_SRC python :eval never
 >>> from kanren.constraints import neq, isinstanceo
@@ -525,6 +537,8 @@ arguments appears to fall outside of the unification system's reach entirely.
 As Listing [[cons-cdr-unify-example]] demonstrates,
 with src_python[:eval never]{cons} we're able to succinctly express such a
 "pattern" for all the built-in ordered collection types.
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: ~CONS~ pair unification and reification using Python's built-in lists.
 #+NAME: cons-cdr-unify-example
 #+BEGIN_SRC python :eval never
 >>> unify([1, 2], cons(var('car'), var('cdr')), {})
@@ -552,6 +566,8 @@ expressions, they are cumbersome to work with and do not provide much in the way
 of relevant functionality (e.g. access to nested elements is too indirect, their
 construction and use involves irrelevant meta information, etc.)
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Constructing a simple src_python[:eval never]{etuple}.
 #+NAME: etuple-examples
 #+BEGIN_SRC python :eval never
 >>> from operator import add
@@ -563,6 +579,8 @@ ExpressionTuple((<built-in function add>, 1, 2))
 #+END_SRC
 
 These types can be indexed--and generally treated--like immutable src_python[:eval never]{tuple}s:
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: src_python[:eval never]{etuple} indexing example.
 #+NAME: etuple-index
 #+BEGIN_SRC python :eval never
 >>> et[0:2]
@@ -570,6 +588,8 @@ ExpressionTuple((<built-in function add>, 1))
 #+END_SRC
 
 Evaluation is available through a simple cached property:
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: src_python[:eval never]{etuple} evaluation example.
 #+NAME: etuple-eval
 #+BEGIN_SRC python :eval never
 >>> et.eval_obj
@@ -590,13 +610,14 @@ An src_python[:eval never]{apply} dispatch is also specified, which represents a
 combination of ~CONS~ (via the aforementioned src_python[:eval never]{cons}
 library) and an S-expression evaluation.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Adding src_python[:eval never]{etuple} support to a standard Python class.
 #+NAME: etuple-custom-class
 #+BEGIN_SRC python :eval never
 from collections.abc import Sequence
 
 from etuples import rator, rands, apply
 from etuples.core import ExpressionTuple
-
 
 
 class Node:
@@ -633,11 +654,13 @@ def apply_Operator(rator, rands):
 With the specification of src_python[:eval never]{rands}, src_python[:eval never]{rator},
 and src_python[:eval never]{apply} for src_python[:eval never]{Node} types, it is now
 possible to convert src_python[:eval never]{Node} objects to src_python[:eval never]{etuples}
-using the src_python[:eval never]{etuplize} function.  Listing [[etuple-custom-etupleize]]
+using the src_python[:eval never]{etuplize} function.  Listing [[etuple-custom-etuplize]]
 demonstrates this process and shows how the underlying object is preserved through
 conversion and evaluation.
 
-#+NAME: etuple-custom-etupleize
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Converting a supported class instance into an src_python[:eval never]{etuple}.
+#+NAME: etuple-custom-etuplize
 #+BEGIN_SRC python :eval never
 >>> mul_op, add_op = Operator("*"), Operator("+")
 >>> mul_node = Node(mul_op, [1, 2])
@@ -665,6 +688,8 @@ and src_python[:eval never]{cdr}).
 Listing [[math-reduceo]] constructs an example goal that represents two simple
 mathematical identities: i.e. \(x + x = 2 x\) and \(\log \exp x = x\).
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: An example goal that implements some basic mathematical relations.
 #+NAME: math-reduceo
 #+BEGIN_SRC python :eval never
 def single_math_reduceo(expanded_term, reduced_term):
@@ -692,6 +717,8 @@ fixed-point is reached--assuming the relevant goal is a reduction, of course.
 Additionally, we create another partial function that sets some default arguments
 for the src_python[:eval never]{walko} meta goal.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Partial functions for a fixed-point calculation and graph walking.
 #+NAME: math-partials
 #+BEGIN_SRC python :eval never
 math_reduceo = partial(reduceo, single_math_reduceo)
@@ -703,6 +730,8 @@ how miniKanren nicely covers both term expansion and reduction, as well as graph
 and fixed-point calculations, in a single concise framework. (The symbols
 prefixed by src_python[:eval never]{~_} in the output are unground logic variables.)
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Simultaneous mathematical term "expansion" and "reduction".
 #+NAME: math-expand-reduce
 #+BEGIN_SRC python :eval never
 >>> expanded_term = var()
@@ -730,6 +759,8 @@ term reduction, expansion, or both under structural constraints on the desired
 terms.  Specifically, we ask for the first ten expanded/reduced term pairs where
 the expanded term is a logarithm with at least one argument.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Constrained term "expansion" and "reduction".
 #+NAME: math-constrained-expand-reduce
 #+BEGIN_SRC python :eval never
 >>> res = run(10, [expanded_term, reduced_term],
@@ -779,6 +810,8 @@ specifying and obtaining derived information, like shapes and data types, for a
 To demonstrate the use of src_python[:eval never]{symbolic-pymc}, we consider a
 simple conjugate model constructed using PyMC3 in Listing [[beta-binom-setup]].
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: A beta-binomial conjugate model in PyMC3.
 #+NAME: beta-binom-setup
 #+BEGIN_SRC python :eval never
 import pymc3 as pm
@@ -828,6 +861,8 @@ Listing [[beta-binom-convert]] converts the PyMC3 model object, src_python[:eval
 into a standard Theano graph that represents the relationship between random variables
 in the model.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Converting a PyMC3 model into a Theano graph of the model's sample-space.
 #+NAME: beta-binom-convert
 #+BEGIN_SRC python :eval never
 from symbolic_pymc.theano.pymc3 import model_graph
@@ -847,6 +882,8 @@ form of Equation [[eqref:eq:beta-binom-model]] in the first argument and the
 resulting posterior of Equation [[eqref:eq:beta-binom-post]] in the second argument.
 It makes use of both meta objects and src_python[:eval never]{etuple}s.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: A miniKanren goal that implements the beta-binomial conjugate relation.
 #+NAME: beta-binom-goal
 #+BEGIN_SRC python :eval never
 def betabin_conjugateo(x, y):
@@ -886,6 +923,8 @@ def betabin_conjugateo(x, y):
 Finally, Listing [[beta-binom-run]] shows how the goal can be applied to the model's graph
 and how a new Theano graph and PyMC3 model is constructed from the output.
 
+#+ATTR_LATEX: :float nil :placement h!
+#+CAPTION: Running the beta-binomial conjugate goal and creating a PyMC3 model for the results.
 #+NAME: beta-binom-run
 #+BEGIN_SRC python :eval never
 from symbolic_pymc.theano.pymc3 import graph_model
