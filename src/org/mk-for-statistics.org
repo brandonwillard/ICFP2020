@@ -1,4 +1,4 @@
-#+TITLE: miniKanren as a Tool for Symbolic Statistical Computation
+#+TITLE: miniKanren as a Tool for Symbolic Computation in Python
 #+AUTHOR: Brandon T. Willard
 #+DATE: 2020-05-09
 #+EMAIL: brandonwillard@gmail.com
@@ -33,25 +33,57 @@
 #+PROPERTY: header-args:latex :results raw replace :exports results :eval yes
 
 #+BEGIN_abstract
-This article provides a brief overview of the current use and future potential
-of symbolic computation within the statistical modeling and machine learning
-community of Python.  It details the use of miniKanren as an underlying
-framework for term rewriting on top of existing Python libraries and its unique
-potential for exciting cross-overs between the currently disparate areas of
-statistical modeling and programming language theory.
+In this article, we give a brief overview of the current state and future potential of
+symbolic computation within the Python statistical modeling and machine learning
+community.  We detail the use of miniKanren as an underlying framework for term
+rewriting and symbolic mathematics, as well as its ability to orchestrate the
+use of existing Python libraries per
+[[citet:RocklinMathematicallyinformedlinear2013]].  We also discuss the
+relevance and potential of relational programming for implementing more robust,
+portable, domain-specific "math-level" optimizations--with a slight focus on
+Bayesian modeling.  Finally, we describe the work going forward and raise some
+questions regarding potential cross-overs between statistical modeling and
+programming language theory.
 #+END_abstract
 
 #+latex: \maketitle
 
 * Introduction
-- Probabilistic Programming Languages (PPLs) are DSLs that model elements of linear algebra and probability theory
-- PPLs are often backed by "Tensor libraries"
-- Tensor libraries are the somewhat more modern equivalents of LAPACK and BLAS-type offerings.
-- They use symbolic graphs
-* Symbolic Computation in Modern Statistics and Machine Learning
 :PROPERTIES:
 :CUSTOM_ID: sec:intro-symbolic-computation
 :END:
+
+Throughout, we will focus on two categories of tools within the modern
+machine learning, statistics, and data science world:  *Tensor Libraries* and
+*Probabilistic Programming Languages* (PPLs).
+
+For our purposes, it's sufficient to say that tensor libraries are the modern
+wrappers for standard linear algebra operations--traditionally offered by BLAS
+[[citep:BLASBasicLinear]] and LAPACK [[citep:LAPACKLinearAlgebra]]--with
+extensions to handle general arrays, perform tensor operations, and
+efficiently compute gradients--usually via automatic differentiation (AD).
+These libraries are the main workhorses of deep learning (DL) libraries, and,
+because of this strong association, tensor libraries often provide
+deep learning-specific functionality (e.g. tools for constructing
+DL models, common activation functions, etc.)
+
+:TODO:
+- Provide a small code example?
+:END:
+
+Probabilistic programming languages are domain-specific languages that aid in
+the specification of statistical models and the application of estimation
+methods on said models.  Often, PPLs reflects the formal, mathematical
+specification of statistical modeling.
+In general, PPLs are built on top of libraries that implement composable types
+representing elements from probability theory--like statistical distributions and
+random variables.  Nowadays, these libraries are increasingly backed by tensor
+libraries.
+
+:TODO:
+- Provide a small code example?
+:END:
+
 There is an appreciable amount of symbolic computation behind the standard Deep
 Learning libraries of today, like Theano [[citep:bergstra_theano:_2010]],
 TensorFlow [[citep:TensorFlow2020]], and PyTorch [[citep:PyTorch2020]].
@@ -67,28 +99,36 @@ standard symbolic mathematics, these libraries are undoubtedly performing
 symbolic calculations, and most of them are on a path toward even more symbolic
 computation and outright symbolic mathematics.
 
-Theano's optimizations are perhaps the best example of this.  It provides an
-entire subsystem for incorporating "graph optimizations" that effectively employ
-common algebraic simplifications.  Ultimately, this optimization systems is a
-mix of standard term rewriting and symbolic algebra (e.g. pattern matching, term
-substitutions, common subset elimination, graph traversal strategies,
-fixed-point operators, etc.)
+Theano's optimizations are perhaps the best example of more open-ended symbolic
+computation within modern tensor libraries.  It provides an entire subsystem for
+incorporating custom "graph optimizations" that implements pattern matching,
+term substitution, utilizes common sub-expression elimination (CSE), offers
+multiple graph traversal strategies and fixed-point operators, etc.  The
+optimization system is used to perform graph canonicalization and specialization
+through a number of standard matrix algebra identities, and, with these, it is
+able to avoid numerous unnecessary numeric calculations and increase the overall
+"flexibility" of function/model specification.
 
-Although Theano is the older and more established tensor library and has easily
-demonstrated the efficacy of its optimizations, TensorFlow and others do not
-appear to have nearly as much design and development focus in the areas of
-symbolic mathematics and term rewriting.  Even so, there are projects and
-communities within each that acknowledge the importance of broader symbolic
-computation and are gradually developing toward Theano's earlier example
-[[citep:LarsenTensorFlowGraphOptimizations2019a]].
+Unfortunately, most other tensor libraries do not offer as much in the way of
+user-level Python manipulation of graphs or a graph design and format
+that lends well to user-level term rewriting.  In the case of TensorFlow, an
+internal graph canonicalization and optimization library
+[[citep:LarsenTensorFlowGraphOptimizations2019a]] is being actively developed,
+but--at the moment--core work is done exclusively in C++ and the potential for
+robust user-defined optimizations isn't clear.
 
-Outside of tensor libraries, projects like JAX [[citep:JAX2020]] approach similar
-symbolic-oriented operations by way of traced Python code and Python AST.
+Outside of the aforementioned tensor libraries, other projects approach similar
+symbolic-oriented operations--like AD--by way of function tracing
+[[citep:JAX2020]] and Python AST parsing [[citep:tangent2020]], instead of
+explicitly constructed computation graphs.  As with most tensor libraries,
+these projects aren't particularly focused on supporting generic graph
+manipulation or symbolic mathematics.  Nevertheless, they demonstrate another
+burgeoning entry-point to general symbolic computation.
 
-Overall, at this point in time, there is a fairly well established set of modern
+At this point in time, there is a fairly well established set of modern
 machine learning and statistical modeling libraries that are all fundamentally
-built upon the basics of symbolic manipulation of graphs representing
-tensor/linear algebra operations.  They all vary in the degree to which they
+built upon the basics of symbolic graphs representing
+tensor algebra operations.  They all vary in the degree to which they
 implement symbolic mathematics or programmatically encode the underlying
 high-level mathematics.  Regardless, the case for more advanced symbolic
 computation and mathematics is slowly being made by multiple influential
@@ -234,15 +274,15 @@ random variable and its affine transform:
 Under the left-to-right application of Equation [[eqref:eq:normal-affine-trans]],
 the funnel model exhibits much better sampling properties.
 
-We would like to see relations like these used within statistical modeling
-systems, so that model specification is more flexible and less brittle with
-respect to the exact specification of a model.  Systems like the aforementioned
-STAN and the Python based PyMC
-[[citep:SalvatierProbabilisticprogrammingPython2016]] are also known as
-Probabilistic Programming Languages (PPLs), and, as such, their place as
-interpreted languages is rather clear.  In line with most programmatically
-interpreted languages, compilation can be used to improve performance
-and--simultaneously--the expressive potential of the syntax.
+The work we detail here is motivated by the desire to see relations like these
+used within statistical modeling systems, so that model specification is more
+flexible and less brittle with respect to the exact specification of a model.
+
+Systems like STAN and the Python-based PyMC
+[[citep:SalvatierProbabilisticprogrammingPython2016]] are PPLs, so their role as
+programming languages is also clear, and, in line with most programming
+languages, compilation can be used to improve performance
+and--simultaneously--expand the expressive potential of a language's syntax.
 
 Projects like STAN and PyMC rely almost exclusively on AD and have more or less
 superseded older projects based on different, non-gradient-based generalized
@@ -253,108 +293,118 @@ given model.  We would like to see approaches like this enhanced by the symbolic
 described here *and* the tensor libraries now providing AD to many of these newer
 modeling systems.
 
-One noteworthy example would involves PyMC's logic for determining which sampler
-is used.  Just like the optimization system in Theano, the graph of a PyMC model
-could be manipulated to produce a more suitable, yet equivalent, model for a given
-sampler, or--conversely--produce a customized sampler for a given model.
-In extreme cases (an example of which is provide in a later section), the posterior
-distribution ultimately estimated by PyMC could be returned in closed-form.
+One noteworthy example involves PyMC's internal logic for determining an
+appropriate sampler.  Just like the optimization system in Theano, the graph of
+a PyMC model could be manipulated to produce a more suitable, yet equivalent,
+model for a given sampler, or--conversely--produce a customized sampler for a
+given model.  In extreme cases (an example of which is provide in a later
+section), the posterior distribution ultimately estimated by PyMC could be
+returned in closed-form.
 
 Otherwise, there are entire classes of efficient, model-specific samplers that
-are out of these PPLs' reach, and the addition of some straight-forward and
+are currently out of these PPLs' reach, and the addition of some straight-forward and
 flexible term rewriting capabilities would make them immediately available.
-Some examples involve basic Gibbs samplers, scale mixture representations that
-lead to efficient samplers for sparsity priors
-[[citep:BhadraDefaultBayesiananalysis2016]] and non-Gaussian models
+Some examples involve Gibbs samplers, scale mixture representations for sparsity priors
+[[citep:BhadraDefaultBayesiananalysis2016]] non-Gaussian models
 [[citep:polson_bayesian_2013]], and parameter expansions
 [[citep:scott_parameter_2010]].
 
-The missing functionality that would drive any automated application of these
-methods essentially falls within the domain of term rewriting
-[[citep:BaaderTermrewritingall1999]].  Even the algebraic optimizations
-currently employed by modern tensor libraries are fundamentally limited by the
-basic choices and challenges covered by term rewriting.  Due to these basic
-challenges, the work described above will most likely need more flexibility than
-not in the way it navigates the space of applied term rewriting.  Instead of
-making bold choices in how term rewriting operations are expressed and
-implemented, it will need to avoid a development path that produces little in
-the way of reusable work.  It will also need to exist in a form that's at least
-recognizable to people working in the related fields of term rewriting; that way,
-there's more potential for immediate cross-over.
+As a proof of concept using Theano's existing optimization system, automatic
+simplification of random variables was demonstrated in
+[[citet:WillardRoleSymbolicComputation2017]].  While it is more than possible
+to extend the same approach into auto-conjugation and related statistical
+optimizations, the scalability and means of specifying new optimizations wasn't
+promising.  One element of concern, involved the need use an identity in more than
+one direction.  This need can arise when, say, one direction of an identity like
+Equation [[eqref:eq:normal-affine-trans]] is useful for computational reasons (e.g.
+the funnel problems) and the other direction helps one determine the
+distribution type of a term.  The latter is important for determining when a
+specialized sampler can be applied, since it's not apparent that \(\mu + \sigma
+Y\) in Equation [[eqref:eq:normal-affine-trans]] is a normal random variable unless
+the right-to-left rule is applied.
 
-To reiterate, we envision a light-weight means of establishing collections of
-domain-specific relations for interactive and automated use.  These relations
-can be created, used, and refined directly by the experts that work with or
-develop them and then deployed in sophisticated systems that are jointly
-developed by experts in term rewriting, type theory, code synthesis, and related
-research.
-# Analogous efforts can be seen in projects like the functions grimoire of
-# [[citet:Johanssonfungrim2020]].
+Considerations like these lead quickly into the domain of term rewriting
+[[citep:BaaderTermrewritingall1999]].  The example involving Equation
+[[eqref:eq:normal-affine-trans]] and the relevance of both directions of its implied
+rewrite rules begins to touch upon the ideas of graph normalization/canonicalization,
+rewrite rule completion, and general equational reasoning.  Specifically, it would
+seem that a convenient normal form would only help solve some problems, and the
+ability to apply rewrites in both directions would still be relevant even
+after--say--generating a reduced set of rewrite rules using a Knuth-Bendix-like
+completion procedure [[citep:Huetcompleteproofcorrectness1981]].
+
+It's likely that classical niceties, like graph normal forms that
+guarantee rewrite rule termination, aren't available to us, especially given our
+desire for an interactive system for ad-hock additions and experimentation.
+However, when they are, we would like the means to apply methods like rewrite
+rule completion.
+
+Overall, we seek a middle ground that provides an approachable, powerful, yet
+light-weight framework for orchestrating domain-specific relations.
+These relations could come from identities in statistics and probability theory,
+and it should be possible for domain experts to specify them in the programming
+languages of their fields.
+
+As well, we would like to see this framework easily deployed in sophisticated
+systems, with these systems benefiting from joint development between experts in
+term rewriting, type theory, code synthesis, and related areas.  We believe
+miniKanren could serve an important role within this intersection of
+requirements.
 
 * Where miniKanren fits in
 
 Computer science researchers have been--and continue to--actively pursue topics
-in symbolic computation specifically for the area of statistical modeling
+in symbolic computation specifically within the area of statistical modeling
 [[citep:Waliahighlevelinferencealgorithms2018,
 GorinovaAutomaticReparameterisationProbabilistic,
 SatoFormalverificationhigherorder2018, ShanExactBayesianInference2017]].
-Unfortunately, much of this work takes the form of entirely new languages and
-very specialized high-level semantics that do not lend well to adoption by
-experts in the areas of statistical modeling and methods.  This limitation
-severely restricts the efficacy of such systems and their implementations by
-requiring that they solve notoriously difficult symbolic problems in order to
-compete with simple patchworks of software that implement relatively narrow
-specialized methods.
+While very in-line with the automations described here, much of this work takes
+the form of entirely new languages or very broad theoretical work that doesn't
+always lend itself to more immediate input from experts in the areas of
+statistical modeling methods.
 
-Put another way, it's like the two extremes mentioned earlier, where--in this
-case--a statistician could specify an efficient slice sampler for a class
-of sparsity priors--like the Horseshoe and Horseshoe+ priors
-[[citep:BhadraDefaultBayesiananalysis2016]]--or use a generalized symbolic
-system that attempts to derive such slice samplers through first principles.
-Unfortunately, the latter falls within a set of well known and extremely
-difficult problems in symbolic mathematics, AI, and computer science in general
-(e.g. automatic theorem proving), and the former leads to a zoo of inflexible
-software packages that can rarely be combined and that alone provide only marginal
-utility.
-
-Much of the same can be said about work in symbolic computation for
-tensor algebra.  In these cases, efforts tend to focus more on new characterizations
-of standard term rewriting that are too restrictive in their use and concern for
-very specific sets of relations (albeit rarely--if ever--realized as actual
-relations), methodologies, and programming languages.  For example, there's
-platform-specific rewriting work for automatic conjugation
-[[citep:HoffmanAutoconjRecognizingExploiting2018]] in Python that works off
-of a specially designed term rewriting mechanism called "interception", neural
-network-specific DSLs and frameworks [[citep:WeiDLVMmoderncompiler2017,
-VasilacheTensorComprehensionsFrameworkAgnostic2018]], specialized tensor calculi
-[[citep:MullinTensorsndArrays2009]], etc.  Given the degree of specialization in
-this area of work, few--if any--of the resulting frameworks or implementations
-provide an apparent benefit to more than a couple of the objectives stated in
+In other cases, the limitations involve the degree of specialization, where
+exclusive focus is often on neural network-specific DSLs and frameworks, or
+only certain types of optimizations [[citep:WeiDLVMmoderncompiler2017,
+VasilacheTensorComprehensionsFrameworkAgnostic2018]].
 Section [[#sec:want-to-do]].
 
-In general, work that reformulates--or even implicitly obfuscates--the well
-established underlying frameworks and mechanics behind the relevant symbolic
-computations, like term rewriting and unification, aren't viable without very
-clear theoretical, conceptual, and/or implementation advantages.  Essentially,
-there should be a good reason for adding conceptual barriers to established
-areas of symbolic computation.
+Regarding Python and statistical modeling, the recent automatic conjugation and
+rescaling examples of [[citet:HoffmanAutoconjRecognizingExploiting2018,
+GorinovaAutomaticReparameterisationProbabilistic]] are perhaps the most germane;
+however, their approach relies entirely on an existing pattern-matching and
+rewrite system [[citep:RadulRules2020]] that is non-relational and uses the
+Python stack for backtracking.  As we've stated earlier, the use of relations
+has important conceptual and implementation advantages (e.g. the concepts being
+implemented are fundamentally relational, and the inherent code reuse arising
+from "bidirectional" applications of identities).
 
-Instead, we believe it's more immediately constructive to further the
-development of lightweight symbolic tools that are flexible with respect to the
-programming language requirements, address the unavoidable and important theoretical
-underpinnings (e.g. term rewriting, unification) in a minimally sufficient way,
-and easily allow for arbitrary low-level interventions at the implementation
-level.  Such a context would be much more conducive to the growth of extensible
-logic and code.
+As well, use of the Python stack for backtracking puts severe limitations on the
+size of graphs manageable by such a system.  Python
+throws src_python[:eval never]{RecursionErrors} when the stack reaches a fixed
+size, and term graphs representing real models are by no means small, so
+unification alone is liable to cause irreconcilable errors.  Our implementation
+of unification in Python [[citep:Willardlogicalunification2020]] demonstrates
+this exact problem in its unit tests, and has to use a generator-based
+trampoline to circumvent direct use of the Python stack.
+
+Furthermore, [[citet:HoffmanAutoconjRecognizingExploiting2018]] doesn't provide
+clear examples of how rewrite rules are specified in their proposed system, so
+it's difficult to asses exactly how expressive their DSL is, or even how well it
+works within Python and its standard collection types.
 
 This is where miniKanren comes in.  It serves as a minimal, lightweight
 relational DSL that orchestrates unification and reification
 [[citep:HemannmKanrenminimalfunctional2013]] and operates exclusively within an
-existing host language.  As well, it doesn't attempt to reformulate or avoid its
-connection to the relevant theoretical concepts or areas of study, so, for
-instance, its preexisting use in type theory automatically provides exciting
-connections to both basic and cutting-edge symbolic computation (e.g. theorem
-proving [[citep:NearalphaleanTAPDeclarativeTheorem2008]]).
+existing host language.  Also, its "internal" mechanics maintain direct
+connections with multiple relevant theoretical concepts (e.g. unification,
+complete search, relational programming), so, for--instance--its use
+as a type theory prototyping language automatically provides exciting connections to
+both basic and cutting-edge symbolic computation (e.g. automatic theorem proving
+[[citep:NearalphaleanTAPDeclarativeTheorem2008]]).  The use of typing rules
+to describe the automation of high-level inference algorithms in
+[[citet:Waliahighlevelinferencealgorithms2018]] only stresses exactly how close
+these fields truly are.
 
 miniKanren inherently provides a degree of high-level portability and low-level
 flexibility.  Relations can be built on top of other relations, and--dependent
@@ -362,12 +412,12 @@ on the degree of host language-specificity--it can be quite clear how
 relations can be implemented in other host languages.  This is exactly the type
 of generality that provides the basis for a less language-specific
 community of applied mathematics and statistics-based optimizations.
+It's also possible to address performance and host-language issues--like the
+src_scheme[:eval never]{RecursionError}s described above--provided the level
+of host integration miniKanren offers.
 
-Likewise, when performance is absolutely necessary, it's easy to implement
-relations directly in the host language.
-
-In the following section, we will illustrate these points
-using a Python implementation of miniKanren.
+In the following section, we will illustrate many of these points using our
+Python implementation of miniKanren.
 
 * Symbolic Computation in Python Driven by miniKanren
 
@@ -954,30 +1004,104 @@ miniKanren--using TensorFlow graphs--is given in
   - Relational expression manipulation and its value to statistical modeling
   - Build libraries of the *relations* that underly numeric stability "tricks" (e.g. STAN funnel example), that generate custom samplers for a given model
 :END:
-* What's needed from/in miniKanren
-- In general, for miniKanren to fulfill these purposes, it needs to be combined with some standard applied term rewriting features
-- Relational graph traversal
-  - Examples of [[https://github.com/pythological/kanren/blob/master/doc/graphs.md][existing relations]]
-  - Include and compute graph "metadata" (e.g. tag "operators" for efficient traversal to relevant nodes)
-- Efficiently computing fixed-points for relations (e.g. tabling)
-- Adding [[https://github.com/pythological/kanren/pull/27][associative-commutative relations]] and general equational logic to
-  miniKanren (and perhaps not via extensions to unification?)
-- Guided src_python[:eval never]{conde} branching [[citep:SwordsGuidedSearchminiKanren]]
-  - Using measures for computational cost and stochastic system "complexity" (e.g. Rao-Blackwellization)
-  - E.g. src_python[:eval never]{condp}
-- Scaling for large and complex src_scheme[:eval never]{(conde ((== form-in form-in-template) (== form-out form-out-template)))}
-  - Some type of goal "compilation"
-  - Could be related to, or involve, completion
 * Discussion
-- Mention non-statistical symbolic computation with miniKanren in Python (e.g. like the Hy example in [[citet:WillardReadableStringsRelational2018b]])
-- Look into the cross-overs with "inference engines" (e.g. the Rete algorithm)
-- New symbolic "platforms" are being developed all the time and implementing
-  sophisticated symbolic logic is becoming more challenging and risky, which
-  disincentives such efforts
-- Statistical modeling and machine learning within miniKanren [[citep:ZhangNeuralGuidedConstraint2018]]
-- We need a light-weight suitable platform for symbolic, math-level work that doesn't force us to compromise existing platforms or shoehorn abstractions
-- Are there aspects of miniKanren that lend well (or otherwise) to more advanced--and relevant--term rewriting capabilities?
-  - Relational completion, completion for non-terminating rewrite systems
+
+Looking forward, the "functions grimoire" project of
+[[citet:Johanssonfungrim2020]] is a great example of community-sourced and
+encoded domain knowledge.  It serves as a prime example of an independently
+developed, high-level knowledge encoding effort that could provide relations
+deployable by miniKanren within another computationally-focused system like
+TensorFlow or JAX.  These are the cross-overs with made possible by the "glue"
+that could be miniKanren.
+
+One currently unexplored area involves interactions between miniKanren and
+symbolic algebra libraries.  We don't expect miniKanren to replace symbolic
+algebra libraries, especially not when many symbolic algebra operations are not
+needed in a relational capacity, and there is an immediate place for all the
+standard algebraic simplifications offered by libraries like SymPy
+[[citep:sympydevelopmentteam_sympy_2014]].  Distinctions arise when one
+considers how "orchestratable" said symbolic algebra libraries actually are.
+Fortunately, SymPy can be directly integrated with a Python version of
+miniKanren.  This opens up the possibility of applying advanced algebraic
+operations within goals.  One example is could involve the use of
+inverse-Laplace transforms for finding scale mixture decompositions of random
+variables when they aren't directly encoded in an existing goal.
+
+Perhaps another concrete example of how a library like SymPy could be leveraged
+by miniKanren is given by the system described in
+[[citet:Waliahighlevelinferencealgorithms2018]]; if this system were implemented
+in miniKanren, an implementation of the type rules might be straight-forward to
+express /and/ the ~integrate~ steps could be easily outsourced to SymPy.
+
+Regarding miniKanren itself, consider the following idiom:
+#+BEGIN_SRC scheme :eval never
+(conde ((== lhs match-form-1)
+        (== rhs replace-form-2))
+       ((== lhs match-form-1)
+        (== rhs replace-form-2))
+       ...)
+#+END_SRC
+
+src_scheme[:eval never]{conde}s of this form are natural for encoding
+identities of the form \(\text{match-form-1} = \text{replace-form-2}\) that
+relate src_scheme[:eval never]{lhs}, src_scheme[:eval never]{rhs}.
+They also appear in implementations of relational interpreters where they
+encode the supported forms of a target language (e.g. variable assignment,
+conditionals, etc.)
+
+With equational identities nicely encoded by src_scheme[:eval never]{conde}
+forms, it's possible for the rewrite completion algorithms mentioned in Section
+[[#sec:want-to-do]] to be applied automatically in some cases, and, if a complete
+and reduced rewrite system can be generated from
+a src_scheme[:eval never]{conde} it would be worth determining if--or when--the
+resulting system could be beneficial to the general performance of miniKanren.
+Is it possible that some cases of non-terminating goal orderings could be
+avoided by completion?  Would a src_scheme[:eval never]{conde} implied by
+completion result in fewer goal evaluations and failed branches?
+
+Alternatively, is it possible that miniKanren could be utilized by the
+completion algorithm itself so that it produces potentially relevant results
+when a system otherwise wouldn't terminate (e.g. via infinite goal streams)?
+What are the advantages of performing completion in a relational fashion, and
+what unique elements can miniKanren provide to that situation (e.g. easier
+implementation of experimental completion algorithms)?  Could miniKanren
+accelerate research into tensor calculus systems
+[[citep:ArrighiOperationalsemanticsformal2004]]?  Proving rewrite termination
+and completion itself can involve SAT problems
+[[citep:EndrullisMatrixinterpretationsproving2008, KleinMaximalcompletion2011]];
+can miniKanren's constraint capabilities--among other things--be applied in this
+area?
+
+These goals comprise a bulk of the miniKanren work implied here, and their size
+could grow quickly over time.  This leads to performance questions that are
+possibly answered by work on guided search [[citep:SwordsGuidedSearchminiKanren,
+ZhangNeuralGuidedConstraint2018]] and src_scheme[:eval never]{conde} branch
+selection [[citep:BoskinSurprisinglyCompetitiveConditional2018]].
+
+There is also little reason to think that a single src_scheme[:eval never]{conde}
+will--or even /should/--contain all identities, so a means of compiling
+goals and assessing their combined src_scheme[:eval never]{conde} branches
+might be worth considering in this context.
+
+Additionally, our Python implementation of miniKanren comes with experimental
+support for associative and commutative relations.
+We've found utility in assigning these two properties to existing operators from
+other libraries (e.g. addition operators in Theano and TensorFlow) as a means
+of adding flexibility to the exact representation of graphs.  This is especially
+important in instances where graph normalization isn't entirely consistent or
+available via the targeted graph backend (e.g.  TensorFlow).
+
+The process of implementing these relations has opened a few questions that
+cannot be properly treated here, instead we would simply like to propose the
+general idea for the miniKanren community to consider broadly.
+# E.g. how to efficiently handle operators of arbitrary, but known and fixed, arities.
+# Goal ordering is an issue, and we've implemented some limited "groundedness" orderings
+
+Finally, we would like to consider the exciting potential for a "feedback loop"
+between statistical modeling/machine learning and miniKanren.  If miniKanren can
+improve the process of statistical modeling and statistical modeling can improve
+the processing of miniKanren [[citep:ZhangNeuralGuidedConstraint2018]], is this
+perhaps how mankind can accomplish true AI?
 
 
 #+BIBLIOGRAPHYSTYLE: plainnat
