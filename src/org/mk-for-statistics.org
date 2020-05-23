@@ -2,11 +2,10 @@
 #+AUTHOR: Brandon T. Willard
 #+DATE: 2020-05-09
 #+EMAIL: brandonwillard@gmail.com
-#+FILETAGS: :minikanren:pymc:symbolic-pymc:statistics:relational-programming:
 
 #+STARTUP: hideblocks indent hidestars
 
-#+OPTIONS: author:t date:t ^:nil toc:nil title:t tex:t d:(not "todo" "logbook" "note" "testing" "notes") html-preamble:t
+#+OPTIONS: author:nil date:t ^:nil toc:nil title:t tex:t d:(not "todo" "logbook" "note" "testing" "notes") html-preamble:t
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 
@@ -17,15 +16,39 @@
 ;; org-mode from handling `\maketitle` itself and add it ourself.
 (setq org-latex-title-command "")
 (add-to-list 'org-latex-classes
-             '("acmart" "\\documentclass[11pt]{acmart}"
+             '("acmart" "\\documentclass{acmart}"
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
                ("\\paragraph{%s}" . "\\paragraph*{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+;; We want to add line numbers to listings
+(setq org-latex+-tcolorbox-listing-env
+  "\\newtcblisting[auto counter,number within=section]{oxtcblisting}[1]{%
+\tframe hidden,
+\tlisting only,
+\tlisting engine=minted,
+\tminted options={linenos, numbersep=2mm},
+\tbreakable,
+\tenhanced,
+\ttitle after break={\\raggedleft\\lstlistingname\\ \\thetcbcounter~ -- continued},
+\tlisting remove caption=false,
+\tarc=0pt,
+\touter arc=0pt,
+\tboxrule=0pt,
+\tcoltitle=black,
+\tcolbacktitle=white,
+\tcenter title,
+\t#1
+}")
 #+END_SRC
 
 #+SETUPFILE: latex-setup.org
+
+#+LATEX_HEADER: \author{Brandon T. Willard}
+#+LATEX_HEADER: \affiliation{\institution{Ampersand} \city{Chicago} \state{IL} \country{USA}}
+#+LATEX_HEADER: \email{bwillard@uchicago.edu}
 
 #+PROPERTY: header-args :eval never-export :exports both :results output drawer replace
 #+PROPERTY: header-args+ :session dlm-optimizations :comments noweb
@@ -33,20 +56,55 @@
 #+PROPERTY: header-args:latex :results raw replace :exports results :eval yes
 
 #+BEGIN_abstract
-In this article, we give a brief overview of the current state and future potential of
-symbolic computation within the Python statistical modeling and machine learning
-community.  We detail the use of miniKanren as an underlying framework for term
-rewriting and symbolic mathematics, as well as its ability to orchestrate the
-use of existing Python libraries per
+In this article, we give a brief overview of the current state and future
+potential of symbolic computation within the Python statistical modeling and
+machine learning community.  We detail the use of miniKanren
+[[citep:ByrdRelationalProgrammingminiKanren2009]] as an underlying framework for
+term rewriting and symbolic mathematics, as well as its ability to orchestrate
+the use of existing Python libraries per
 [[citet:RocklinMathematicallyinformedlinear2013]].  We also discuss the
 relevance and potential of relational programming for implementing more robust,
-portable, domain-specific "math-level" optimizations--with a slight focus on
+portable, domain-specific ``math-level'' optimizations--with a slight focus on
 Bayesian modeling.  Finally, we describe the work going forward and raise some
 questions regarding potential cross-overs between statistical modeling and
 programming language theory.
 #+END_abstract
 
-#+latex: \maketitle
+#+LATEX: \maketitle
+#+LATEX: \acmConference{ICFP 2020}{ACM SIGPLAN International Conference on Functional Programming}{August 23-28}{venue}
+#+LATEX: \keywords{minikanren,symbolic-pymc,statistics,relational programming,symbolic computation}
+
+#+BEGIN_SRC latex
+\begin{CCSXML}
+<ccs2012>
+   <concept>
+       <concept_id>10002950.10003648.10003670</concept_id>
+       <concept_desc>Mathematics of computing~Probabilistic reasoning algorithms</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10003752.10003790.10003795</concept_id>
+       <concept_desc>Theory of computation~Constraint and logic programming</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10003752.10003790.10003798</concept_id>
+       <concept_desc>Theory of computation~Equational logic and rewriting</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10003752.10003790.10003794</concept_id>
+       <concept_desc>Theory of computation~Automated reasoning</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+ </ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Mathematics of computing~Probabilistic reasoning algorithms}
+\ccsdesc[500]{Theory of computation~Constraint and logic programming}
+\ccsdesc[500]{Theory of computation~Equational logic and rewriting}
+\ccsdesc[500]{Theory of computation~Automated reasoning}
+#+END_SRC
 
 * Introduction
 :PROPERTIES:
@@ -59,7 +117,7 @@ machine learning, statistics, and data science world:  *Tensor Libraries* and
 
 For our purposes, it's sufficient to say that tensor libraries are the modern
 wrappers for standard linear algebra operations--traditionally offered by BLAS
-[[citep:BLASBasicLinear]] and LAPACK [[citep:LAPACKLinearAlgebra]]--with
+[[citep:BLASBasicLinear2020]] and LAPACK [[citep:LAPACKLinearAlgebra2020]]--with
 extensions to handle general arrays, perform tensor operations, and
 efficiently compute gradients--usually via automatic differentiation (AD).
 These libraries are the main workhorses of deep learning (DL) libraries, and,
@@ -101,13 +159,13 @@ computation and outright symbolic mathematics.
 
 Theano's optimizations are perhaps the best example of more open-ended symbolic
 computation within modern tensor libraries.  It provides an entire subsystem for
-incorporating custom "graph optimizations" that implements pattern matching,
+incorporating custom ``graph optimizations'' that implements pattern matching,
 term substitution, utilizes common sub-expression elimination (CSE), offers
 multiple graph traversal strategies and fixed-point operators, etc.  The
 optimization system is used to perform graph canonicalization and specialization
 through a number of standard matrix algebra identities, and, with these, it is
 able to avoid numerous unnecessary numeric calculations and increase the overall
-"flexibility" of function/model specification.
+``flexibility'' of function/model specification.
 
 Unfortunately, most other tensor libraries do not offer as much in the way of
 user-level Python manipulation of graphs or a graph design and format
@@ -118,7 +176,7 @@ but--at the moment--core work is done exclusively in C++ and the potential for
 robust user-defined optimizations isn't clear.
 
 Outside of the aforementioned tensor libraries, other projects approach similar
-symbolic-oriented operations--like AD--by way of function tracing
+symbolic-oriented operations--like AD--through function tracing
 [[citep:JAX2020]] and Python AST parsing [[citep:tangent2020]], instead of
 explicitly constructed computation graphs.  As with most tensor libraries,
 these projects aren't particularly focused on supporting generic graph
@@ -195,7 +253,7 @@ Rao-Blackwellization is derived from the Rao-Blackwell Theorem
 [[citep:CasellaRaoBlackwellisationsamplingschemes1996]], which states that
 analytically computed conditional expectations outperform their un-integrated
 counterparts.  It applies in a rather general sense to numerous Markov Chain
-Monte Carlo methods, but it's automation is something that falls well outside of
+Monte Carlo methods, but its automation is something that falls well outside of
 most applied libraries due to its symbolic computation requirements.
 
 Those requirements aren't necessarily on the means or requirements of symbolic
@@ -215,18 +273,21 @@ derived.  We like to constructively navigate those two extremes.
 
 For instance, Rao-Blackwellizations appearing in published material is often
 driven by high-level *relations*.  Some of those relations involve basic theorems
-in probability theory like the following algebraic fact about the sum of
-Gaussian random variables:
+in probability theory like the following identity--expressed as a rule--about
+the sum of Gaussian random variables:
 #+BEGIN_SRC latex
 \begin{equation}
   \label{eq:sum-of-normals}
-  \begin{gathered}
-    X + Y = Z
-    \\
-    X \sim \operatorname{N}\mleft(\mu_x, \sigma_x^2\mright), \quad
-    Y \sim \operatorname{N}\mleft(\mu_y, \sigma_y^2\mright), \quad
-    Z \sim \operatorname{N}\mleft(\mu_x + \mu_y, \sigma_x^2 + \sigma_y^2\mright)
-  \end{gathered}
+  \begin{aligned}
+    \left(\text{sum-of-normals}\right) & \quad
+    \frac{
+      X \sim \operatorname{N}\mleft(\mu_x, \sigma_x^2\mright), \quad
+      Y \sim \operatorname{N}\mleft(\mu_y, \sigma_y^2\mright), \quad
+      X + Y = Z
+    }{
+      Z \sim \operatorname{N}\mleft(\mu_x + \mu_y, \sigma_x^2 + \sigma_y^2\mright)
+    }
+  \end{aligned}
 \end{equation}
 #+END_SRC
 
@@ -255,23 +316,26 @@ In particular, STAN [[citep:standevelopmentteam_stan_2014]] is well known for
 providing a popular manual that advises user-level manipulations to account for
 common sampling issues arising from poorly specified models and the deficiencies
 of the sampling approach it implements
-[[citet:GelmanTransformingparameterssimple2019]].  Among those is the classic
+[[citep:GelmanTransformingparameterssimple2019]].  Among those is the classic
 pathological "funnel" model of [[citet:neal_slice_2003]].  This model can be
 reparameterized using the following basic relation between a standard Gaussian
 random variable and its affine transform:
 #+BEGIN_SRC latex
 \begin{equation}
   \label{eq:normal-affine-trans}
-  \begin{gathered}
-    X = \mu + \sigma Y,
-    \\
-    X \sim \operatorname{N}\mleft( \mu, \sigma^2 \mright),\quad
-    Y \sim \operatorname{N}\mleft( 0, 1 \mright),\quad
-  \end{gathered}
+  \begin{aligned}
+    \left( \text{normal-affine-transform} \right) &\quad
+    \frac{
+      Y \sim \operatorname{N}\mleft( 0, 1 \mright), \quad
+      X = \mu + \sigma Y
+    }{
+      X \sim \operatorname{N}\mleft( \mu, \sigma^2 \mright)
+    }
+  \end{aligned}
 \end{equation}
 #+END_SRC
 
-Under the left-to-right application of Equation [[eqref:eq:normal-affine-trans]],
+Under the left-to-right application of Rule [[eqref:eq:normal-affine-trans]],
 the funnel model exhibits much better sampling properties.
 
 The work we detail here is motivated by the desire to see relations like these
@@ -280,26 +344,27 @@ flexible and less brittle with respect to the exact specification of a model.
 
 Systems like STAN and the Python-based PyMC
 [[citep:SalvatierProbabilisticprogrammingPython2016]] are PPLs, so their role as
-programming languages is also clear, and, in line with most programming
-languages, compilation can be used to improve performance
-and--simultaneously--expand the expressive potential of a language's syntax.
+programming languages is clear, and--in line with most programming
+languages--compiler optimizations can be used to improve performance
+and expand the expressive potential of a language's syntax.
 
 Projects like STAN and PyMC rely almost exclusively on AD and have more or less
 superseded older projects based on different, non-gradient-based generalized
 methodologies, like BUGS [[citep:LunnBUGSprojectEvolution2009]].  BUGS used some
-of the domain-specific relations implied here to construct a surprisingly robust
-expert-like system that would automatically construct a slice sampler for a
-given model.  We would like to see approaches like this enhanced by the symbolic tools
-described here *and* the tensor libraries now providing AD to many of these newer
-modeling systems.
+of the domain-specific identities implied here to construct a surprisingly robust
+expert system that could automatically construct a sampler for a
+given model.  We would like to make such systems easier to produce and extend,
+and we would like to see them built on top of modern tensor libraries, so that
+the AD-driven methods of modern PPLs can be used in tandem.
 
-One noteworthy example involves PyMC's internal logic for determining an
-appropriate sampler.  Just like the optimization system in Theano, the graph of
-a PyMC model could be manipulated to produce a more suitable, yet equivalent,
-model for a given sampler, or--conversely--produce a customized sampler for a
-given model.  In extreme cases (an example of which is provide in a later
-section), the posterior distribution ultimately estimated by PyMC could be
-returned in closed-form.
+One noteworthy example is PyMC's internal logic for determining an appropriate
+sampler.  This logic could benefit from an easily extensible, expert-like system
+that matches models to samplers.  Just like the optimization system in Theano,
+the graph of a PyMC model can be manipulated to produce a more suitable, yet
+equivalent, model for a given sampler, or--conversely--produce a customized
+sampler for a given model.  In extreme cases, the posterior distribution
+ultimately estimated by PyMC could be returned in closed-form.  A small example
+of this is given in Section [[#sec:symbolic-pymc]].
 
 Otherwise, there are entire classes of efficient, model-specific samplers that
 are currently out of these PPLs' reach, and the addition of some straight-forward and
@@ -314,17 +379,17 @@ simplification of random variables was demonstrated in
 [[citet:WillardRoleSymbolicComputation2017]].  While it is more than possible
 to extend the same approach into auto-conjugation and related statistical
 optimizations, the scalability and means of specifying new optimizations wasn't
-promising.  One element of concern, involved the need use an identity in more than
+promising.  One element of concern involved the need use an identity in more than
 one direction.  This need can arise when, say, one direction of an identity like
-Equation [[eqref:eq:normal-affine-trans]] is useful for computational reasons (e.g.
+Rule [[eqref:eq:normal-affine-trans]] is useful for computational reasons (e.g.
 the funnel problems) and the other direction helps one determine the
 distribution type of a term.  The latter is important for determining when a
 specialized sampler can be applied, since it's not apparent that \(\mu + \sigma
-Y\) in Equation [[eqref:eq:normal-affine-trans]] is a normal random variable unless
+Y\) in Rule [[eqref:eq:normal-affine-trans]] is a normal random variable unless
 the right-to-left rule is applied.
 
 Considerations like these lead quickly into the domain of term rewriting
-[[citep:BaaderTermrewritingall1999]].  The example involving Equation
+[[citep:BaaderTermrewritingall1999]].  The example involving Rule
 [[eqref:eq:normal-affine-trans]] and the relevance of both directions of its implied
 rewrite rules begins to touch upon the ideas of graph normalization/canonicalization,
 rewrite rule completion, and general equational reasoning.  Specifically, it would
@@ -335,8 +400,8 @@ completion procedure [[citep:Huetcompleteproofcorrectness1981]].
 
 It's likely that classical niceties, like graph normal forms that
 guarantee rewrite rule termination, aren't available to us, especially given our
-desire for an interactive system for ad-hock additions and experimentation.
-However, when they are, we would like the means to apply methods like rewrite
+desire for an interactive system for ad hoc additions and experimentation.
+When they are, however, we would like the means to apply methods like rewrite
 rule completion.
 
 Overall, we seek a middle ground that provides an approachable, powerful, yet
@@ -356,7 +421,6 @@ requirements.
 Computer science researchers have been--and continue to--actively pursue topics
 in symbolic computation specifically within the area of statistical modeling
 [[citep:Waliahighlevelinferencealgorithms2018,
-GorinovaAutomaticReparameterisationProbabilistic,
 SatoFormalverificationhigherorder2018, ShanExactBayesianInference2017]].
 While very in-line with the automations described here, much of this work takes
 the form of entirely new languages or very broad theoretical work that doesn't
@@ -367,11 +431,10 @@ In other cases, the limitations involve the degree of specialization, where
 exclusive focus is often on neural network-specific DSLs and frameworks, or
 only certain types of optimizations [[citep:WeiDLVMmoderncompiler2017,
 VasilacheTensorComprehensionsFrameworkAgnostic2018]].
-Section [[#sec:want-to-do]].
 
 Regarding Python and statistical modeling, the recent automatic conjugation and
 rescaling examples of [[citet:HoffmanAutoconjRecognizingExploiting2018,
-GorinovaAutomaticReparameterisationProbabilistic]] are perhaps the most germane;
+GorinovaAutomaticReparameterisationProbabilistic2018]] are perhaps the most germane;
 however, their approach relies entirely on an existing pattern-matching and
 rewrite system [[citep:RadulRules2020]] that is non-relational and uses the
 Python stack for backtracking.  As we've stated earlier, the use of relations
@@ -385,36 +448,51 @@ throws src_python[:eval never]{RecursionErrors} when the stack reaches a fixed
 size, and term graphs representing real models are by no means small, so
 unification alone is liable to cause irreconcilable errors.  Our implementation
 of unification in Python [[citep:Willardlogicalunification2020]] demonstrates
-this exact problem in its unit tests, and has to use a generator-based
-trampoline to circumvent direct use of the Python stack.
+this exact problem in its unit tests, and, as a result, the library uses a
+coroutine-based trampoline to avoid excessive use of the Python stack.
+
+Simply increasing the recursion limit (e.g.
+via src_python[:eval never]{sys.setrecursionlimit}) is--at best--a single-case
+solution, and it's often safer to pursue a more "pythonic" rewrite (i.e. loop or
+list comprehension-based approach).  Also, Python currently lacks even the most basic
+forms of tail recursion elimination--and it's very unlikely to appear in later
+versions [[citep:RossumNeopythonicTailRecursion2009a]].
 
 Furthermore, [[citet:HoffmanAutoconjRecognizingExploiting2018]] doesn't provide
 clear examples of how rewrite rules are specified in their proposed system, so
-it's difficult to asses exactly how expressive their DSL is, or even how well it
+it's difficult to assess exactly how expressive their DSL is, or even how well it
 works within Python and its standard collection types.
 
 This is where miniKanren comes in.  It serves as a minimal, lightweight
-relational DSL that orchestrates unification and reification
-[[citep:HemannmKanrenminimalfunctional2013]] and operates exclusively within an
-existing host language.  Also, its "internal" mechanics maintain direct
-connections with multiple relevant theoretical concepts (e.g. unification,
-complete search, relational programming), so, for--instance--its use
+relational DSL that orchestrates unification and reification and operates
+exclusively within an existing host language.  Furthermore, its core
+functionality is succinctly described in a single page of code, which helps make
+its inner workings very transparent to the interested developer
+[[citep:HemannmKanrenminimalfunctional2013]].
+
+In contrast with other unification-driven systems, its "internal" mechanics maintain direct
+connections with multiple high-level theoretical concepts (e.g. unification,
+complete search, relational programming, CPS, etc.), so, for--instance--its use
 as a type theory prototyping language automatically provides exciting connections to
 both basic and cutting-edge symbolic computation (e.g. automatic theorem proving
-[[citep:NearalphaleanTAPDeclarativeTheorem2008]]).  The use of typing rules
-to describe the automation of high-level inference algorithms in
-[[citet:Waliahighlevelinferencealgorithms2018]] only stresses exactly how close
-these fields truly are.
+[[citep:NearalphaleanTAPDeclarativeTheorem2008]]).  As a matter of fact, the use
+of typing rules to describe the automation of high-level inference algorithms in
+[[citet:Waliahighlevelinferencealgorithms2018]] is a direct example of how
+elements of type theory can be used in high-level statistical model optimization, and
+miniKanren can serve as a bridge to fast implementations.
 
 miniKanren inherently provides a degree of high-level portability and low-level
-flexibility.  Relations can be built on top of other relations, and--dependent
-on the degree of host language-specificity--it can be quite clear how
-relations can be implemented in other host languages.  This is exactly the type
-of generality that provides the basis for a less language-specific
-community of applied mathematics and statistics-based optimizations.
-It's also possible to address performance and host-language issues--like the
-src_scheme[:eval never]{RecursionError}s described above--provided the level
-of host integration miniKanren offers.
+flexibility.  Relations can be built on top of other relations, and, in these
+cases, the goals that implement such composite relations in miniKanren are often
+easily ported to miniKanrens in other host languages.  miniKanren doesn't
+enforce a formal, host-language independent semantics, yet it still lends well
+to this kind of portability.  This lack of formal semantics also makes it easier
+to address performance and domain specific issues in multiple ways--like
+the src_python[:eval never]{RecursionError}s described above.
+With these properties, miniKanren has exactly the type of generality and
+flexibility to serve as a basis for more fluid collaboration--in symbolic
+computation--between independent communities of computer scientists and
+statisticians.
 
 In the following section, we will illustrate many of these points using our
 Python implementation of miniKanren.
@@ -422,36 +500,62 @@ Python implementation of miniKanren.
 * Symbolic Computation in Python Driven by miniKanren
 
 In the following sections we detail our implementation of miniKanren
-[[citep:Willardpythologicalkanren]], operating under the PyPy
+[[citep:Willardpythologicalkanren2020]], operating under the PyPy
 name src_python[:eval never]{miniKanren} and Python package
 name src_python[:eval never]{kanren}, and its ecosystem of complementary
 packages.
 
-src_python[:eval never]{kanren} is a fork that tries to maintain parity with
-the original implementation, but now deviates significantly in a number of
-ways described in what follows.  Both this fork and the original version
-have some small, but noteworthy, differences from the standard miniKanren
-literature.  Specifically, the \(\equiv\) goal is represented by the function
-src_python[:eval never]{eq}, there is no ~fresh~--instead, fresh logic variables
-are constructed explicitly using the function src_python[:eval never]{var}, and
-the functionality of ~bind~ and ~mplus~ are represented by the logical "and" and "or"
+src_python[:eval never]{kanren} is a fork that tries to maintain syntactic
+parity with its predecessor src_python[:eval never]{logpy}
+[[citep:RocklinlogpyLogicProgramming2018]], but now deviates significantly in terms
+of core mechanics and offerings.  The most important difference is in the
+relational status of src_python[:eval never]{logpy}'s goals; most were not truly
+relational.  This was largely due to the use of
+an exception-based goal reordering system, which served as the exclusive
+means of handling missing src_scheme[:eval never]{cons}-based capabilities and minimalistic constraints.
+Basically, one could attempt to develop entirely in standard Python at the goal
+constructor level, and throw special src_python[:eval never]{EarlyGoalError}
+exceptions when goal constructor arguments were not sufficiently ground for
+a given task.  The exception would cause the goals to be reordered until
+an ordering satisfied these goals' groundedness requirements.
+
+This exception-based approach was combined with a lightweight tuple-based
+Lisp-like expression evaluator that operated in tandem with the goal reordering.  Both
+of these components were built directly into the core stream processing
+functions and introduced additional complexity and challenges, but, most of all,
+they made it much easier to construct non-relational goals and imposed new,
+non-miniKanren semantics, that increased the barrier to entry beyond a simple
+understanding of core Python and miniKanren.
+
+Our implementation of miniKanren's core mechanics does not operate on Lisp-like
+idioms or a its invent its own goal processing semantics.  Additionally, it provides
+a straight-forward object-oriented framework for implementing truly relational
+constraints.  These points will be covered in more detail in the following
+sub-sections.
+
+First, we must note that both Python implementations share the same small,
+but noteworthy, deviations from the standard Scheme-based miniKanrens.
+Specifically, the \(\equiv\) goal is represented by the
+function src_python[:eval never]{eq}, there is no ~fresh~--instead, fresh logic
+variables are constructed explicitly using the
+function src_python[:eval never]{var}, and the functionality of ~bind~ and
+~mplus~ are represented by the logical ``and'' and ``or''
 functions src_python[:eval never]{lall} and src_python[:eval never]{lany} and
-are essentially the ~conj~ and ~disj~ of [[citet:HemannmKanrenminimalfunctional2013]].
+are essentially the ~conj~ and ~disj~ stream functions of
+[[citet:HemannmKanrenminimalfunctional2013]].
 
 ** Goals as Generators
-Our implementation of miniKanren represents goals and goal streams using
-Python's built-in generators [[citep:GeneratorsPythonWiki]].  The resulting
-simplicity of this approach is an example of how well miniKanren's underlying
-mechanics can be adapted to host languages in which the standard list-based
-approach isn't as natural or efficient as it is in Scheme.
+Our implementation of miniKanren represents goals using
+Python's built-in generators [[citep:GeneratorsPythonWiki2020,
+PythonSoftwareFoundationExpressionsPythondocumentation2020]].
 
-As Listing [[low-level-relations]] shows, a goal can take full advantage of the
-generator capabilities.
+Listing [[low-level-relations]] illustrates the general form of a miniKanren goal
+and some of the idioms available to them.
 
 #+ATTR_LATEX: :float nil :placement h!
 #+CAPTION: Example idioms for generator-based goals in Python.
 #+NAME: low-level-relations
-#+BEGIN_SRC python :eval never
+#+BEGIN_SRC python :eval never -n 0 -r
 def relationo(*args):
     """Construct a goal for this relation."""
 
@@ -472,33 +576,26 @@ def relationo(*args):
         """
         nonlocal args
 
-        # Make sure we're working with the state-wise current values of the
-        # relation's arguments.
         args_rf = reify(args, S)
 
-        # Now, implement the goal!
-        #
-        # Remember, a goal succeeds when it `yield`s at least one state (e.g. `S`),
-        # and it fails when it `yield`s `None` (or simply `return`s).
-        #
-        # Just for reference, here are a few common goal objectives and their
-        # `yield` idioms.
-        #
-
-        # 1. If you want a "stateful" goal, you can do standard Python generator
-        # work.
         x = 1
         for a in args_rf:
             S_new = S.copy()
-            if isvar(a):
+
+            if isvar(a) or x > 3:
                 S_new[a] = x
-            yield S_new
-            x += 1
+
+            # If the stream manipulating functions support it, information can
+            # be sent back to the goal and used!
+            z = yield S_new  # (ref:goal-generator-loop)
+
+            if not z:
+                x += 1
 
         # 2. If you only want to confirm something in/about the state, `S`, then
         # simply `yield` it if the condition(s) are met:
         if some_condition:
-            yield S
+            yield S  # (ref:goal-generator-condition)
         else:
             # If the condition isn't met, end the stream by returning/not
             # `yield`ing anything.
@@ -506,14 +603,14 @@ def relationo(*args):
 
         # 3. If you can do everything using existing goal constructors, then
         # simply use `yield from`:
-        yield from lall(conso(1, var(), args_rf), ...)
+        yield from lall(conso(1, var(), args_rf), ...)  # (ref:goal-generator-stream)
 
         # 4. If you want to implement a recursive goal, simply call the goal
         # constructor.  It won't recurse endlessly, because this goal
         # needs to be evaluated before the recursive call is made.
         # This is how you create infinite miniKanren streams/results that yield
         # lazily.
-        yield from relationo(*new_args)
+        yield from relationo(*new_args)  # (ref:goal-generator-relation)
 
         # 3. + 4. can be combined with 1. to directly use the results produced
         # from other goal constructor streams and--for example--arbitrarily
@@ -523,19 +620,56 @@ def relationo(*args):
     return relationo_goal
 #+END_SRC
 
-The implementation patterns described in Listing [[low-level-relations]] are
-realized in a number of low-level goal implementations
-within src_python[:eval never]{kanren}.  One good example is the
-goal src_python[:eval never]{permuteo}, which relates an ordered collection to
-its permutations.  Within src_python[:eval never]{permuteo}, low-level Python
-steps are taken in order to efficiently difference collections using hashes of
-their elements and to iteratively compute permutations using Python's
-built-in src_python[:eval never]{permutations}.
+Simply put, a goal is responsible for either explicitly generating its goal
+stream (e.g. [[(goal-generator-loop)]], [[(goal-generator-condition)]]) or deferring to
+other goals (e.g. [[(goal-generator-relation)]]) and/or goal combinations via the
+stream manipulation functions src_python[:eval never]{lall}
+and src_python[:eval never]{lany} (e.g. [[(goal-generator-stream)]]).
 
-This approach also makes it possible for goals to more easily control the order
-of output results in their generated goal streams, and, using Python's coroutine
-capabilities, it's also possible to send results back to a goal producing a
-goal stream [[citep:PEP342Coroutines]].
+The idioms described in Listing [[low-level-relations]] are realized in a number of
+low-level goal implementations within src_python[:eval never]{kanren}.  One good
+example is the src_python[:eval never]{permuteo} goal, which relates an ordered
+collection to its permutations.  Within src_python[:eval never]{permuteo},
+low-level Python steps are taken in order to efficiently compute differences of
+hashable collections when the arguments are ground, and, when one argument
+is unground, Python's built-in permutation
+generator src_python[:eval never]{itertools.permutations} is used to efficiently
+generate unification arguments for the unground term.  This strictly
+Python-based low-level implementation of a goal is both completely relational
+and considerably more scalable than an implementation built on the basic
+miniKanren relations and amounting to Bogosort
+[[citep:KiselyovBacktrackinginterleavingterminating2005]].
+
+Within ordinary goals like src_python[:eval never]{relationo_goal} one is able
+to leverage the naturally delayed nature of Python's generators and seamlessly
+define recursive goals by calls to the outer goal
+constructor src_python[:eval never]{relationo}, and, in the case of goal
+constructors that do not define their own low-level goals, recursion is
+facilitated by the \(\eta\)-delay function, src_python[:eval never]{Zzz}, of
+[[citet:HemannmKanrenminimalfunctional2013]].
+
+This approach also makes it possible for goals to more easily control the type
+and order of the results it streams.  The loop around Line [[(goal-generator-loop)]]
+in Listing [[low-level-relations]], demonstrates how a goal can easily keep and
+manage its state--e.g. the variable src_python[:eval never]{x}--and use it to affect
+the goal stream it produces.
+
+Also, using Python's coroutine capabilities, Line [[(goal-generator-loop)]] shows
+how it's possible to send results back to a goal when the process evaluating the
+stream uses src_python[:eval never]{generator.send} [[citep:PEP342Coroutines2020]].
+In this case, a goal could be given ``upstream'' information.
+
+Also, using Python's src_python[:eval never]{__length_hint__}
+[[citep:PEP424method2020]] spec, goals and stream manipulation functions could be
+told when a stream is empty or simply make decisions based on partial information about a
+stream's size.  Such information could help determine efficient orderings
+within src_python[:eval never]{lall} conjunctions and
+between src_scheme[:eval never]{conde} branches, by--say--allowing these
+operators to choose finite streams over potentially infinite ones in certain cases.
+
+Overall, the resulting simplicity of this approach is an example of how well
+miniKanren's underlying mechanics can be adapted to host languages in which the
+standard list-based approach isn't as natural or efficient as it is in Scheme.
 
 ** Constraints
 Our Python implementation follows the approach of
@@ -561,34 +695,41 @@ constraint system in miniKanren.
 (2, 4)
 #+END_SRC
 
-** ~CONS~
-One of the main challenges involved in implementing miniKanren in some host languages is
-the lack of immediate support for important Scheme/Lisp-like elements.  The most notable
-being ~CONS~.  Our Python implementation of miniKanren preserves nearly all the
-same algebraic datatype semantics of ~CONS~ pairs through
-a src_python[:eval never]{cons} package
-[[citep:Willardpythologicalpythoncons2020]] that provides an easily extensible
-class and set of generic functions that incorporate Python's built-in sequence
-types.
+** src_scheme[:eval never]{cons}
+One of the main challenges involved in implementing miniKanren in some host
+languages is the lack of immediate support for important Scheme/Lisp-like
+elements.  The most notable for Python being src_scheme[:eval never]{cons}.
 
-~CONS~ support is important for maintaining certain forms of simplicity and
-expressiveness in term rewriting.  For instance, while "pattern matching"--or
-unification--alone can be rather straight-forward to implement, and more than a
-couple of the software systems mentioned here have introduced basic pattern
-matching, they all tend to lack the simplicity afforded by list-based
-terms and proper ~CONS~ semantics, making unification against a term's ~CDR~ or
-"tail" cumbersome to express (or implement).
+src_scheme[:eval never]{cons} support is important for maintaining certain forms
+of simplicity and expressiveness in term rewriting.  For instance, while
+``pattern matching''--or unification--alone can be rather straight-forward to
+implement, and more than a couple of the software systems mentioned here have
+introduced basic pattern matching, they all tend to lack the expressive
+simplicity afforded by list-based terms and proper src_scheme[:eval never]{cons}
+semantics.
 
 A good example is Theano's unification system
-[[citep:GraphoptimizationTheano2020]]; attempting to construct a pattern that
-matches a specific ~CAR~, or operator, and an unspecified number/type of
-arguments appears to fall outside of the unification system's reach entirely.
+[[citep:GraphoptimizationTheano2020]]; although it does provide a tuple-based
+interface for defining forms to match and replace, and it supports logic variables
+within said forms, it doesn't provide a means of expressing
+a src_scheme[:eval never]{cons} pair.  As a result, attempting to construct a
+pattern that matches a specific operator (or src_scheme[:eval never]{car}) and
+an unspecified number/type of arguments (or src_scheme[:eval never]{cdr})--or
+vice versa--falls outside of the system's reach.
+
+Our Python implementation of miniKanren preserves nearly all the same algebraic
+datatype semantics of Lisp's src_scheme[:eval never]{cons} by way of
+our src_python[:eval never]{cons} package
+[[citep:Willardpythologicalpythoncons2020]].  The src_python[:eval never]{cons}
+package provides a minimal src_python[:eval never]{ConsType} class, along with a
+set of easily extensible generic functions for src_python[:eval never]{car}
+and src_python[:eval never]{cdr}.
 
 As Listing [[cons-cdr-unify-example]] demonstrates,
 with src_python[:eval never]{cons} we're able to succinctly express such a
-"pattern" for all the built-in ordered collection types.
+``pattern'' for all the built-in ordered collection types.
 #+ATTR_LATEX: :float nil :placement h!
-#+CAPTION: ~CONS~ pair unification and reification using Python's built-in lists.
+#+CAPTION: src_scheme[:eval never]{cons} pair unification and reification using Python's built-in lists.
 #+NAME: cons-cdr-unify-example
 #+BEGIN_SRC python :eval never
 >>> unify([1, 2], cons(var('car'), var('cdr')), {})
@@ -601,20 +742,34 @@ with src_python[:eval never]{cons} we're able to succinctly express such a
 [1]
 #+END_SRC
 
-In line with our broader objectives, we believe that sufficiently powerful and
-expressive "pattern matching" shouldn't operate outside of the host language and
-its familiar types--if it isn't absolutely required.
+Later, in Listing [[math-constrained-expand-reduce]], we provide another example
+of how a src_scheme[:eval never]{cons}-compliant unification system makes
+non-trivial patterns easier to express.
 
 ** S-Expressions
 
-Since Python doesn't provide a programmatically convenient intermediate form of
+Since Python doesn't already provide a programmatically convenient form of
 expressions or terms, we've constructed a
-simple src_python[:eval never]{ExpressionTuple} type that extends the
-built-in src_python[:eval never]{tuple} with the ability to evaluate itself and
-cache its results.  While Python does provide AST objects that fully represent
-expressions, they are cumbersome to work with and do not provide much in the way
-of relevant functionality (e.g. access to nested elements is too indirect, their
-construction and use involves irrelevant meta information, etc.)
+simple
+src_python[:eval never]{ExpressionTuple} class--or src_python[:eval never]{etuple}
+for short--that extends the built-in src_python[:eval never]{tuple} with
+the ability to evaluate itself, cache the results, and maintain the cached
+results between non-modifying reconstructions and re-evaluations of the
+same src_python[:eval never]{etuple}.
+
+Python does provide AST objects that fully represent its built-in expressions,
+but they are cumbersome to work with and do not provide much of the desired
+functionality for term rewriting (e.g. access to nested elements is too
+indirect, their construction and use involves irrelevant meta information, etc.)
+See [[citet:WillardReadableStringsRelational2018b]] for examples of term
+rewriting using Python AST objects and miniKanren.
+
+As we demonstrate in a later example (i.e. Listing
+[[math-reduceo]]), src_python[:eval never]{etuples} are an extremely convenient way
+to leverage a target library's user-level functions (e.g. TensorFlow's matrix
+multiplication function) without having to manually construct fully reifiable
+term graphs--many of which require detailed information that may not be
+available at the time of a goal's evaluation.
 
 #+ATTR_LATEX: :float nil :placement h!
 #+CAPTION: Constructing a simple src_python[:eval never]{etuple}.
@@ -628,7 +783,8 @@ construction and use involves irrelevant meta information, etc.)
 ExpressionTuple((<built-in function add>, 1, 2))
 #+END_SRC
 
-These types can be indexed--and generally treated--like immutable src_python[:eval never]{tuple}s:
+src_python[:eval never]{etuples} can be indexed--and generally treated--like
+immutable src_python[:eval never]{tuple}s:
 #+ATTR_LATEX: :float nil :placement h!
 #+CAPTION: src_python[:eval never]{etuple} indexing example.
 #+NAME: etuple-index
@@ -646,18 +802,17 @@ Evaluation is available through a simple cached property:
 3
 #+END_SRC
 
-src_python[:eval never]{etuple}s bridge one of the obvious gaps between
-the Lisp-like capabilities common to miniKanren and its world.
-Furthermore, it is easy to specify conversions from and
-to src_python[:eval never]{etuple}s for arbitrary types.
+Furthermore, it is easy to specify conversions to and
+from src_python[:eval never]{etuple}s for arbitrary types.
 
-Listing [[etuple-custom-class]] constructs two custom classes, src_python[:eval never]{Node}
-and src_python[:eval never]{Operator}, and specifies the ~CAR~ and ~CDR~ for the
-src_python[:eval never]{Node} type via the generic functions
+Listing [[etuple-custom-class]] constructs two custom
+classes, src_python[:eval never]{Node} and src_python[:eval never]{Operator},
+and specifies the src_scheme[:eval never]{car} and src_scheme[:eval never]{cdr}
+for the src_python[:eval never]{Node} type via the generic functions
 [[citep:Rocklinmultipledispatch2019]]
 src_python[:eval never]{rands} src_python[:eval never]{rator}, respectively.
 An src_python[:eval never]{apply} dispatch is also specified, which represents a
-combination of ~CONS~ (via the aforementioned src_python[:eval never]{cons}
+combination of src_scheme[:eval never]{cons} (via the aforementioned src_python[:eval never]{cons}
 library) and an S-expression evaluation.
 
 #+ATTR_LATEX: :float nil :placement h!
@@ -730,8 +885,8 @@ symbolic computation objectives laid out here, so, in response, it provides rela
 that are specific to those needs.
 
 The most important set of relations involve graph traversal and
-manipulation.  src_python[:eval never]{symbolic-pymc} provides "meta" relations
-for applying goals to arbitrary "walkable" structures (i.e. collections that fully
+manipulation.  src_python[:eval never]{symbolic-pymc} provides ``meta'' relations
+for applying goals to arbitrary ``walkable'' structures (i.e. collections that fully
 support src_python[:eval never]{cons} semantics via src_python[:eval never]{car}
 and src_python[:eval never]{cdr}).
 
@@ -760,7 +915,7 @@ def single_math_reduceo(expanded_term, reduced_term):
     )
 #+END_SRC
 
-We can combine the goal in Listing [[math-reduceo]] with the "meta"
+We can combine the goal in Listing [[math-reduceo]] with the ``meta''
 goal, src_python[:eval never]{reduceo}, which applies a goal recursively until a
 fixed-point is reached--assuming the relevant goal is a reduction, of course.
 (The meta goal should really be named src_python[:eval never]{fixedpointo}.)
@@ -781,7 +936,7 @@ and fixed-point calculations, in a single concise framework. (The symbols
 prefixed by src_python[:eval never]{~_} in the output are unground logic variables.)
 
 #+ATTR_LATEX: :float nil :placement h!
-#+CAPTION: Simultaneous mathematical term "expansion" and "reduction".
+#+CAPTION: Simultaneous mathematical term ``expansion'' and ``reduction''.
 #+NAME: math-expand-reduce
 #+BEGIN_SRC python :eval never
 >>> expanded_term = var()
@@ -809,40 +964,65 @@ term reduction, expansion, or both under structural constraints on the desired
 terms.  Specifically, we ask for the first ten expanded/reduced term pairs where
 the expanded term is a logarithm with at least one argument.
 
+In Listing [[math-constrained-expand-reduce]], we use src_python[:eval never]{cons}
+three times to constrain the logic
+variable src_python[:eval never]{expanded_term} to
+only src_python[:eval never]{log} terms with an src_python[:eval never]{add}
+term as the first argument, and we'll further restrict
+the src_python[:eval never]{add} term to one not containing
+another src_python[:eval never]{add} as its first argument.
+
 #+ATTR_LATEX: :float nil :placement h!
-#+CAPTION: Constrained term "expansion" and "reduction".
+#+CAPTION: Constrained term ``expansion''" and ``reduction''.
 #+NAME: math-constrained-expand-reduce
 #+BEGIN_SRC python :eval never
+>>> from kanren.constraints import neq
+>>>
+>>>
+>>> log_arg = var()
+>>> first_arg = var()
+>>> first_arg_car, first_arg_cdr = var(), var()
+>>>
 >>> res = run(10, [expanded_term, reduced_term],
->>>           conso(log, exp_term_cdr, expanded_term),
->>>           conso(var(), var(), exp_term_cdr),
+>>>           eq(etuple(log, log_arg), expanded_term),
+>>>           eq(etuple(add, first_arg, var()), log_arg),
+>>>           conso(first_arg_car, first_arg_cdr, first_arg),
+>>>           neq(first_arg_car, add),
 >>>           term_walko(math_reduceo, expanded_term, reduced_term))
 
 >>> rjust = max(map(lambda x: len(str(x[0])), res))
 >>> print('\n'.join((f'{str(e):>{rjust}} == {str(r)}' for e, r in res)))
-                              log(exp(add(~_2457, ~_2457))) == mul(2, ~_2457)
-                                   log(add(~_2467, ~_2467)) == log(mul(2, ~_2467))
-                                           log(exp(~_2446)) == ~_2446
-                                                log(~_2460) == log(~_2460)
-                    log(exp(log(exp(add(~_2477, ~_2477))))) == mul(2, ~_2477)
-                                              log(~_2464()) == log(~_2464())
-          log(exp(log(exp(log(exp(add(~_2487, ~_2487))))))) == mul(2, ~_2487)
-                           log(~_2460, add(~_2493, ~_2493)) == log(~_2460, mul(2, ~_2493))
-log(exp(log(exp(log(exp(log(exp(add(~_2499, ~_2499))))))))) == mul(2, ~_2499)
-                         log(log(exp(add(~_2501, ~_2501)))) == log(mul(2, ~_2501))
+>>>                             log(add((~_771 . ~_772), (~_771 . ~_772))) == log(mul(2, (~_771 . ~_772)))
+>>>               log(add(log(exp(add(~_815, ~_815))), add(~_829, ~_829))) == log(add(mul(2, ~_815), mul(2, ~_829)))
+>>>                           log(add((~_771 . ~_772), add(~_851, ~_851))) == log(add((~_771 . ~_772), mul(2, ~_851)))
+>>>                  log(add(~_806(add(~_869, ~_869)), add(~_887, ~_887))) == log(add(~_806(mul(2, ~_869)), mul(2, ~_887)))
+>>>                    log(add((~_771 . ~_772), ~_844(add(~_909, ~_909)))) == log(add((~_771 . ~_772), ~_844(mul(2, ~_909))))
+>>>                           log(add(log(exp(~_788)), add(~_935, ~_935))) == log(add(~_788, mul(2, ~_935)))
+>>>                 log(add((~_771 . ~_772), log(exp(add(~_945, ~_945))))) == log(add((~_771 . ~_772), mul(2, ~_945)))
+>>>           log(add(~_806(~_808, add(~_967, ~_967)), add(~_985, ~_985))) == log(add(~_806(~_808, mul(2, ~_967)), mul(2, ~_985)))
+>>>           log(add((~_771 . ~_772), ~_844(~_846, add(~_1007, ~_1007)))) == log(add((~_771 . ~_772), ~_844(~_846, mul(2, ~_1007))))
+>>> log(add(log(exp(log(exp(add(~_1021, ~_1021))))), add(~_1035, ~_1035))) == log(add(mul(2, ~_1021), mul(2, ~_1035)))
 #+END_SRC
 
-** The src_python[:eval never]{symbolic-pymc} Package
+By properly supporting src_scheme[:eval never]{cons} semantics, we were able to
+constructively express a non-trivial term constraint with only four simple
+goals.
 
-In order to bridge miniKanren and the popular tensor libraries Theano and TensorFlow,
-the project src_python[:eval never]{symbolic-pymc} provides "meta" type wrappers
-for the basic tensor graphs in each library.  These meta types allow for more
-graph mutability than the "base" libraries themselves tend to provide.  They also
-allow one to use logic variables where the base libraries wouldn't.
+** The src_python[:eval never]{symbolic-pymc} Package
+:PROPERTIES:
+:CUSTOM_ID: sec:symbolic-pymc
+:END:
+
+In order to bring together miniKanren and the popular tensor libraries Theano
+and TensorFlow, our project src_python[:eval never]{symbolic-pymc} provides
+``meta'' type analogs for the essential tensor graph types of each ``backend'' tensor
+library.  These meta types allow for more graph mutability than the ``base''
+libraries themselves tend to provide.  They also allow one to use logic
+variables where the base libraries wouldn't.
 
 Basic use of src_python[:eval never]{symbolic-pymc} involves either conversion
 of an existing base--i.e. Theano or TensorFlow--graph into a corresponding meta graph, or
-direct construction of meta graphs that are later converted (or "reified") to
+direct construction of meta graphs that are later converted (or ``reified'') to
 one of the base graph types.  miniKanren goals generally work at the meta graph level,
 where--for instance--one would apply goals that unify a converted base graph
 with a pure meta graph containing logic variables.
@@ -873,13 +1053,17 @@ with pm.Model() as model:
 
 A user will generally have some data specifying the values
 for src_python[:eval never]{totals} and src_python[:eval never]{obs_counts} and
-will want to estimate the posterior distribution of src_python[:eval never]{p}.  One way to
-phrase this situation: we want to estimate the distribution of a rate of
-success, src_python[:eval never]{p}, for an event given a total number of
+will want to estimate the posterior distribution of src_python[:eval never]{p}.
+In the Bayesian world, posterior distributions are generally the object of
+interest and estimation.
+
+More specifically, we want to estimate the distribution for a rate of
+success, src_python[:eval never]{p}, given a total number of
 events, src_python[:eval never]{totals}, and observed
-successes, src_python[:eval never]{obs_counts}, under the assumption that
-the events are binomially distributed with rate src_python[:eval never]{p}, itself
-having a beta prior distribution.
+successes, src_python[:eval never]{obs_counts}, under the assumption that the
+events are binomially distributed with rate src_python[:eval never]{p}.  We
+let src_python[:eval never]{p} take a beta distribution prior, and that
+completes our Bayesian specification of a model.
 
 Mathematically, this simple model is stated as follows:
 #+BEGIN_SRC latex
@@ -892,8 +1076,7 @@ Mathematically, this simple model is stated as follows:
   \end{aligned}
 \end{equation}
 #+END_SRC
-
-This model has a well known closed-form posterior distribution given by
+and it has a well known closed-form posterior distribution given by
 #+BEGIN_SRC latex
 \begin{equation}
   \label{eq:beta-binom-post}
@@ -906,6 +1089,22 @@ Instead of wasting resources estimating the posterior numerically
 Monte Carlo sampler), we can simply extract the underlying Theano graph
 from src_python[:eval never]{model} and apply a relation that represents the
 underlying conjugacy and use the resulting posterior.
+
+The general rule implied by this situation is
+#+BEGIN_SRC latex
+\begin{equation}
+  \label{eq:beta-binom-rule}
+  \begin{aligned}
+    \left( \text{beta-binomial-conjugate} \right) &\quad
+    \frac{
+      Y \sim \operatorname{Binom}\mleft( N, p \mright), \quad
+      p \sim \operatorname{Beta}\mleft( \alpha, \beta \mright)
+    }{
+      \left( p \mid Y=y \right) \sim \operatorname{Beta}\mleft( \alpha + y, \beta + N - y \mright)
+    }
+  \end{aligned}
+\end{equation}
+#+END_SRC
 
 Listing [[beta-binom-convert]] converts the PyMC3 model object, src_python[:eval never]{model},
 into a standard Theano graph that represents the relationship between random variables
@@ -933,7 +1132,7 @@ resulting posterior of Equation [[eqref:eq:beta-binom-post]] in the second argum
 It makes use of both meta objects and src_python[:eval never]{etuple}s.
 
 #+ATTR_LATEX: :float nil :placement h!
-#+CAPTION: A miniKanren goal that implements the beta-binomial conjugate relation.
+#+CAPTION: A miniKanren goal that implements the beta-binomial conjugate rule in [[eqref:eq:beta-binom-rule]].
 #+NAME: beta-binom-goal
 #+BEGIN_SRC python :eval never
 def betabin_conjugateo(x, y):
@@ -990,28 +1189,18 @@ fgraph_conj = expr_graph.reify()
 model_conjugated = graph_model(fgraph_conj)
 #+END_SRC
 
-A more thorough walk-through of src_python[:eval never]{symbolic-pymc} and
-miniKanren--using TensorFlow graphs--is given in
-[[citet:WillardTourSymbolicPyMC2020]].
+[[citet:WillardTourSymbolicPyMC2020]] gives a more thorough walk-through
+of src_python[:eval never]{symbolic-pymc} and miniKanren--using TensorFlow
+graphs.
 
-:TODO:
-  - Hurdles due to no recursion support (e.g. no TCO),
-    - Manually designed trampolines to overcome src_python[:eval never]{RecursionError}s
-  - Build around/on top of the tensor-libraries-of-the-year while maintaining some portability to the relations (i.e. effectively decouple relations from underlying graph libraries)
-  - The need for symbolic DSLs to work for modeler’s and not just the developers
-    - Exploratory tools used by the domain expert for research
-      - E.g. show me all the ways that a model can be reformulated under mixture representations
-  - Relational expression manipulation and its value to statistical modeling
-  - Build libraries of the *relations* that underly numeric stability "tricks" (e.g. STAN funnel example), that generate custom samplers for a given model
-:END:
 * Discussion
 
-Looking forward, the "functions grimoire" project of
+Looking forward, the ``functions grimoire'' project of
 [[citet:Johanssonfungrim2020]] is a great example of community-sourced and
 encoded domain knowledge.  It serves as a prime example of an independently
 developed, high-level knowledge encoding effort that could provide relations
 deployable by miniKanren within another computationally-focused system like
-TensorFlow or JAX.  These are the cross-overs with made possible by the "glue"
+TensorFlow or JAX.  These are the cross-overs with made possible by the ``glue''
 that could be miniKanren.
 
 One currently unexplored area involves interactions between miniKanren and
@@ -1020,10 +1209,10 @@ algebra libraries, especially not when many symbolic algebra operations are not
 needed in a relational capacity, and there is an immediate place for all the
 standard algebraic simplifications offered by libraries like SymPy
 [[citep:sympydevelopmentteam_sympy_2014]].  Distinctions arise when one
-considers how "orchestratable" said symbolic algebra libraries actually are.
+considers how ``orchestratable'' said symbolic algebra libraries actually are.
 Fortunately, SymPy can be directly integrated with a Python version of
 miniKanren.  This opens up the possibility of applying advanced algebraic
-operations within goals.  One example is could involve the use of
+operations within goals.  One example could involve the use of
 inverse-Laplace transforms for finding scale mixture decompositions of random
 variables when they aren't directly encoded in an existing goal.
 
@@ -1036,25 +1225,26 @@ express /and/ the ~integrate~ steps could be easily outsourced to SymPy.
 Regarding miniKanren itself, consider the following idiom:
 #+BEGIN_SRC scheme :eval never
 (conde ((== lhs match-form-1)
-        (== rhs replace-form-2))
-       ((== lhs match-form-1)
+        (== rhs replace-form-1))
+       ((== lhs match-form-2)
         (== rhs replace-form-2))
        ...)
 #+END_SRC
 
 src_scheme[:eval never]{conde}s of this form are natural for encoding
-identities of the form \(\text{match-form-1} = \text{replace-form-2}\) that
+identities of the form \(\text{match-form-1} = \text{replace-form-1}\) that
 relate src_scheme[:eval never]{lhs}, src_scheme[:eval never]{rhs}.
 They also appear in implementations of relational interpreters where they
 encode the supported forms of a target language (e.g. variable assignment,
 conditionals, etc.)
 
 With equational identities nicely encoded by src_scheme[:eval never]{conde}
-forms, it's possible for the rewrite completion algorithms mentioned in Section
+forms, it's possible for the rewrite-completion algorithms mentioned in Section
 [[#sec:want-to-do]] to be applied automatically in some cases, and, if a complete
 and reduced rewrite system can be generated from
 a src_scheme[:eval never]{conde} it would be worth determining if--or when--the
-resulting system could be beneficial to the general performance of miniKanren.
+resulting system could be beneficial to the general performance of miniKanren
+in these tasks.
 Is it possible that some cases of non-terminating goal orderings could be
 avoided by completion?  Would a src_scheme[:eval never]{conde} implied by
 completion result in fewer goal evaluations and failed branches?
@@ -1084,25 +1274,44 @@ goals and assessing their combined src_scheme[:eval never]{conde} branches
 might be worth considering in this context.
 
 Additionally, our Python implementation of miniKanren comes with experimental
-support for associative and commutative relations.
+support for associative and commutative (AC) relations.
 We've found utility in assigning these two properties to existing operators from
 other libraries (e.g. addition operators in Theano and TensorFlow) as a means
 of adding flexibility to the exact representation of graphs.  This is especially
 important in instances where graph normalization isn't entirely consistent or
-available via the targeted graph backend (e.g.  TensorFlow).
+available via the targeted graph backend (e.g. TensorFlow).
 
-The process of implementing these relations has opened a few questions that
-cannot be properly treated here, instead we would simply like to propose the
-general idea for the miniKanren community to consider broadly.
-# E.g. how to efficiently handle operators of arbitrary, but known and fixed, arities.
-# Goal ordering is an issue, and we've implemented some limited "groundedness" orderings
+The process of implementing these AC relations has opened a few questions that
+cannot be properly treated here.  Questions such as "How can operators with
+arbitrary--but known and fixed--arities be efficiently supported?" and "How can
+we overcome some of the goal ordering issues that arise due to commutativity?".
 
-Finally, we would like to consider the exciting potential for a "feedback loop"
-between statistical modeling/machine learning and miniKanren.  If miniKanren can
-improve the process of statistical modeling and statistical modeling can improve
-the processing of miniKanren [[citep:ZhangNeuralGuidedConstraint2018]], is this
-perhaps how mankind can accomplish true AI?
+In [[citep:WillardPullRequest272020]], we address the latter question with a
+form of ``groundedness''-based term reordering goal.  This reordering is performed on
+the src_scheme[:eval never]{cdr} sub-terms as a relation is applied between term
+graphs, since the order in which a relation is applied to corresponding
+sub-terms is--generally--immaterial.  In other words, when walking a
+goal src_scheme[:eval never]{relo} between the
+lists src_scheme[:eval never]{'(a b)} and src_scheme[:eval never]{'(c 2)}, for fresh
+variables src_scheme[:eval never]{a}, src_scheme[:eval never]{b}, and src_scheme[:eval never]{c}, the
+goal can be applied in any order, e.g. src_scheme[:eval never]{(relo a c)}
+then src_scheme[:eval never]{(relo b 2)}, or src_scheme[:eval never]{(relo b 2)}
+then src_scheme[:eval never]{(relo a c)}.  When--for
+instance--src_scheme[:eval never]{(relo a b)} diverges because both arguments
+are fresh, while src_scheme[:eval never]{(relo b 2)} fails, a walk that performs
+the former ordering will diverge, while one that does the latter will fail.  The
+``groundedness'' ordering goal simply reorders the corresponding pairs according
+to how grounded they are to arrive at the non-diverging order of application.
 
+Finally, we would like to point out the potential for an exciting ``feedback loop'': as
+statistical modeling improves the processing of miniKanren
+[[citep:ZhangNeuralGuidedConstraint2018]], miniKanren can also improve the
+process of statistical modeling.
+
+:acks:
+The author would like to thank Jason Hemann and William Byrd for their
+invaluable input and inspiring work.
+:end:
 
 #+BIBLIOGRAPHYSTYLE: plainnat
 #+BIBLIOGRAPHY: ../tex/ICFP2020.bib
