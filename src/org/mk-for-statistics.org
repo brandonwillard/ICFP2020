@@ -11,7 +11,8 @@
 
 #+BEGIN_SRC elisp :eval yes :exports none :results silent
 ;; Remove the automatically added `amssymb`; it has conflicts with `acmart`.
-(setq org-latex-default-packages-alist '())
+(setq org-latex-default-packages-alist '()
+      org-latex-packages-alist '())
 ;; `acmart` wants `\maketitle` *after* the abstract, so we need to prevent
 ;; org-mode from handling `\maketitle` itself and add it ourself.
 (setq org-latex-title-command "")
@@ -44,6 +45,17 @@
 }")
 #+END_SRC
 
+#+LaTeX_CLASS: acmart
+#+LaTeX_CLASS_OPTIONS: [acmlarge, authorversion=true]
+
+# Fixes for ArXiV submission
+#+LaTeX_HEADER: \pdfoutput=1
+#+LaTeX_HEADER: \makeatletter
+#+LaTeX_HEADER: \def\mdseries@tt{m}
+#+LaTeX_HEADER: \makeatother
+#+LaTeX_HEADER: \usepackage[draft=true]{minted}
+#+LaTeX_HEADER: \usepackage[minted, listings, breakable, skins]{tcolorbox}
+
 #+SETUPFILE: latex-setup.org
 
 #+LATEX_HEADER: \author{Brandon T. Willard}
@@ -71,7 +83,7 @@ programming language theory.
 #+END_abstract
 
 #+LATEX: \maketitle
-#+LATEX: \acmConference{ICFP 2020}{ACM SIGPLAN International Conference on Functional Programming}{August 23-28}{venue}
+# #+LATEX: \acmConference{ICFP 2020}{ACM SIGPLAN International Conference on Functional Programming}{August 23-28}{venue}
 #+LATEX: \keywords{minikanren,symbolic-pymc,statistics,relational programming,symbolic computation}
 
 #+BEGIN_SRC latex

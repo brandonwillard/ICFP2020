@@ -1,6 +1,3 @@
-#+LaTeX_CLASS: acmart
-#+LaTeX_CLASS_OPTIONS: [acmlarge, anonymous=true, authordraft=true, review=true]
-
 #+LaTeX_HEADER: \usepackage{amsmath}
 #+LaTeX_HEADER: \usepackage{amsfonts}
 #+LaTeX_HEADER: \usepackage{amsthm}

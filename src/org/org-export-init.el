@@ -37,7 +37,8 @@
 (setq org-latex-listings 'minted
       org-latex-prefer-user-labels t
       org-confirm-babel-evaluate nil
-      org-latex-packages-alist '(("" "minted"))
+      org-latex-default-packages-alist '()
+      org-latex-packages-alist '()
       org-babel-default-inline-header-args '((:exports . "code") (:eval . "never") (:results . "none")))
 
 (add-to-list 'org-publish-project-alist
