@@ -761,20 +761,31 @@ set of easily extensible generic functions for src_python[:eval never]{car}
 and src_python[:eval never]{cdr}.
 
 As Listing [[cons-cdr-unify-example]] demonstrates,
-with src_python[:eval never]{cons} we're able to succinctly express such a
-``pattern'' for all the built-in ordered collection types.
+with src_python[:eval never]{cons} we're able to succinctly express the
+aforementioned ``pattern'' for all the built-in ordered collection types, and
+reify accordingly.
 #+ATTR_LATEX: :float nil :placement h!
 #+CAPTION: src_scheme[:eval never]{cons} pair unification and reification using Python's built-in lists.
 #+NAME: cons-cdr-unify-example
 #+BEGIN_SRC python :eval never
+>>> from collections import OrderedDict
+>>> from cons import cons
+>>> from unification import unify, reify, var
+
 >>> unify([1, 2], cons(var('car'), var('cdr')), {})
 {~car: 1, ~cdr: [2]}
+
+>>> unify((1, 2, 3), cons(var('car'), var('cdr')), {})
+{~car: 1, ~cdr: (2, 3)}
+
+>>> unify(OrderedDict([('a', 1), ('b', 2)]), cons(var('car'), var('cdr')), {})
+{~car: ('a', 1), ~cdr: [('b', 2)]}
 
 >>> reify(cons(1, var('cdr')), {var('cdr'): [2, 3]})
 [1, 2, 3]
 
->>> reify(cons(1, var('cdr')), {var('cdr'): None})
-[1]
+>>> reify(cons(1, var('cdr')), {var('cdr'): (2, 3)})
+(1, 2, 3)
 #+END_SRC
 
 Later, in Listing [[math-constrained-expand-reduce]], we provide another example
