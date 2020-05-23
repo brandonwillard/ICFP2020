@@ -1246,7 +1246,7 @@ Looking forward, the ``functions grimoire'' project of
 encoded domain knowledge.  It serves as a prime example of an independently
 developed, high-level knowledge encoding effort that could provide relations
 deployable by miniKanren within another computationally-focused system like
-TensorFlow or JAX.  These are the cross-overs with made possible by the ``glue''
+TensorFlow or JAX.  These are the cross-overs made possible by the ``glue''
 that could be miniKanren.
 
 One currently unexplored area involves interactions between miniKanren and
