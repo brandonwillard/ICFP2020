@@ -221,59 +221,84 @@ integration within other systems.
 :CUSTOM_ID: sec:want-to-do
 :END:
 
-We simply want a framework within which we can automate "optimizations" specific
-to the domains of statistical modeling and machine learning.  We would like this
-framework to have the properties outlined in Section
-[[#sec:intro-symbolic-computation]] and build upon the well established Python
-machine learning and statistics ecosystem.
+We believe that the statistical modeling and machine learning communities need a
+framework within which they can develop their own high-level, symbolic
+"optimizations" specific to the domains of statistical modeling and machine
+learning.  Ideally, such a framework would have the properties outlined in
+Section [[#sec:intro-symbolic-computation]] and build upon the already well
+established Python machine learning and statistics ecosystem, instead of
+attempting to outright reinvent it or rewrite its staple offerings.
 
-These automations should be usable internally by new and existing projects to
-drive more advanced automations, as well as *interactively* by researchers
-interested in developing new model-estimation techniques.  In the latter
-capacity, the framework we describe is more akin to the standard symbolic
-mathematics offerings; however, this consideration should only emphasize the
-degree to which the framework we desire is expected to integrate with existing
-libraries, since we expect this integration to apply equally to existing
-symbolic mathematics libraries.
+These symbolic optimizations should be usable internally by new and existing
+libraries to drive advanced automations.  As well, they should be usable in an
+*interactive* way by assisting with the automation of the math-level work performed
+during methods research.  In the latter capacity, the framework we describe is
+more akin to the standard symbolic mathematics offerings; however, this
+consideration should only emphasize the degree to which the framework we desire
+is expected to integrate with existing libraries, since our concept of
+integration applies equally well to existing symbolic mathematics libraries.
 
-Now, let's consider statistical modeling explicitly.
+Let's consider statistical modeling explicitly.
 
 Statistical modeling is surprisingly amenable to symbolic methods
 [[citep:CaretteModelmanipulationpart2007,
-CaretteSimplifyingProbabilisticPrograms2016]]--and especially when one is
-working within the more restricted context of Bayesian models
-[[citep:ShanExactBayesianInference2017]], where a fundamental principle called
-"conjugacy" [[citep:robert_bayesian_2007][Chapter 3.3]] is often used and entirely amenable
-to simple pattern matching.  Just within the realm of sample-based model
-estimation, there are numerous principles and generalized results that are
-applicable to large classes of models.
+CaretteSimplifyingProbabilisticPrograms2016]]--and especially when one
+restricts the context to specific practices like Bayesian modeling
+[[citep:ShanExactBayesianInference2017]], where there exist fundamental
+relations--such as "conjugacy" [[citep:robert_bayesian_2007][Chapter 3.3]]--that are
+easily automated with simple pattern matching.
 
-Regarding principles, one of the most basic is Rao-Blackwellization.
-Rao-Blackwellization is derived from the Rao-Blackwell Theorem
-[[citep:CasellaRaoBlackwellisationsamplingschemes1996]], which states that
-analytically computed conditional expectations outperform their un-integrated
-counterparts.  It applies in a rather general sense to numerous Markov Chain
-Monte Carlo methods, but its automation is something that falls well outside of
-most applied libraries due to its symbolic computation requirements.
+Regarding widely applicable principles in statistics, one of the most basic is
+Rao-Blackwellization.  Rao-Blackwellization is derived from the Rao-Blackwell
+Theorem [[citep:CasellaRaoBlackwellisationsamplingschemes1996]], which
+states--roughly--that analytically computed conditional expectations outperform
+their un-integrated counterparts.  In other words, if you can get a closed-form
+answer to an integral, instead of estimating the integral with samples, you
+should use the closed-form answer.
 
-Those requirements aren't necessarily on the means or requirements of symbolic
-computation as much as they are on the breadth of coverage.  For instance, if
-one wants to apply as much Rao-Blackwellization as possible, they would have to
-employ a state-of-the-art symbolic integration routine over arbitrary integrals
-implied by the applicable statistical models.  At the level of (nearly) arbitrary
-integrals, this problem is notoriously difficult.
+It applies in a rather general sense to numerous Markov Chain Monte Carlo
+methods, but its automation is something that falls well outside of most
+libraries due to its symbolic computation requirements.
 
-Instead, it would be much more convenient and approachable to establish
-higher-level relationships that are well known to practitioners and cover
-specific classes of models or distributions, then combine those in a way that
-boosts their coverage over time.  This is something between the extreme
-of enumerating explicit simplifications for each and every possible model and
-stating extremely general axioms from which these simplifications can be
-derived.  We like to constructively navigate those two extremes.
+# For instance, if one wanted to apply as much Rao-Blackwellization as possible,
+# they might have to employ a state-of-the-art symbolic integration routine over
+# arbitrary integrals implied by the applicable statistical models.  At the level
+# of (nearly) arbitrary integrals, this problem is notoriously difficult.
+
+# Alternatively, with modern symbolic algebra libraries, probability theory features
+# are available that allow one to state the same integral problems in a way that's
+# more direct to a statistical modeling library that might want to solve such problems.
+#
+# In this case, the problem is more about the barriers between the two platforms.
+# For example, a Python based statistical modeling library would have to perform
+# a considerable amount of work to convert its internal model representations
+# into a form suitable for an industry-standard symbolic math library like Mathematica
+# and vice versa.
+#
+# Even if the inter-operation were made easier by special bindings and so forth,
+# large external dependencies aren't often viable for small, specialized libraries
+# that want to serve a wide user-base.  Also, these kinds of dependencies can
+# involve considerable context/language shifts that make adding new identities
+# too difficult.
+#
+# Instead, if it were easy to specify high-level relationships symbolically
+# without the dramatic context switching or costly dependencies, then more
+# practitioners and domain experts might be willing to implement them.  Over time,
+# identities and theorems for specific classes of models and distributions would
+# be implemented by the researchers working on them, and those results
+# could be immediately utilized by numeric libraries.  All the while, the
+# coverage of these results could be simultaneously extended by other researchers
+# developing higher-level symbolic methods.
+#
+# Even before this ideal culmination, there's room for something between the
+# extremes of enumerating explicit simplifications for each and every possible
+# model and stating extremely general axioms from which said simplifications can
+# be derived.  We would like to constructively navigate between those two
+# extremes.
 
 For instance, Rao-Blackwellizations appearing in published material is often
 driven by high-level *relations*.  Some of those relations involve basic theorems
-in probability theory like the following identity--expressed as a rule--about
+in probability theory like the following identity--expressed as a rule--regarding
 the sum of Gaussian random variables:
 #+BEGIN_SRC latex
 \begin{equation}
@@ -292,34 +317,39 @@ the sum of Gaussian random variables:
 #+END_SRC
 
 There are numerous examples like [[eqref:eq:sum-of-normals]], and they all take the
-form of relations.  Simple algebraic relations like these can be combined to
-produce derivations that effectively state the closed-form integrals underlying
-Rao-Blackwellization.
+form of relations.  Hiding behind these relations are the closed-form integrals
+that would otherwise be painstaking to compute directly with symbolic algebra.
 
-This general idea mirrors the approaches used by modern symbolic integration
-systems themselves.  When such systems employ Fox H and Meijer G functions
-[[citep:peasgood_method_2009, roach_meijer_1997]], they are effectively
-using only a few simple algebraic convolution relations applying to broad
-classes of hypergeometric functions.  While those systems are intended to reach
-a much greater number of functions, a majority of the work being done by
-statistical modeling systems deals with a much smaller set of standard
-distributions.
+This general idea has analogous in the approaches used by modern symbolic
+integration systems themselves.  When such systems employ Fox H and Meijer G
+functions [[citep:peasgood_method_2009, roach_meijer_1997]], they are
+effectively using only a few simple algebraic convolution relations applied to
+broad classes of hypergeometric functions--many of which can be encoded by
+simple look-up tables.
 
-Currently, statistical modeling systems do not cater to these types of
-additions, nor do they attempt to employ general optimizations like
-Rao-Blackwellization.  Instead, this kind of work is still restricted to the
-user-level, where it is performed by hand and used as input to the system.  At
-the present, the best systems simply provide such relations as advice in their
-manuals and message boards.
+Since those systems are intended to reach a much greater number of functions and
+constraints, they are necessarily more complex; however, a majority of the work
+being done by statistical modeling deals with a comparatively smaller set of
+standard distributions, so major improvements can be made without invoking the
+complexity of symbolic integration systems.
 
-In particular, STAN [[citep:standevelopmentteam_stan_2014]] is well known for
-providing a popular manual that advises user-level manipulations to account for
-common sampling issues arising from poorly specified models and the deficiencies
-of the sampling approach it implements
-[[citep:GelmanTransformingparameterssimple2019]].  Among those is the classic
-pathological "funnel" model of [[citet:neal_slice_2003]].  This model can be
-reparameterized using the following basic relation between a standard Gaussian
-random variable and its affine transform:
+Currently, statistical modeling systems do not directly support these types of
+``knowledge'' additions, nor do they attempt to employ these well-known general
+optimizations like Rao-Blackwellization.  Instead, this kind of work is still
+restricted to the user-level, where it is performed by hand and used as input to
+such systems.  At the present, the best systems simply provide broadly useful
+identities and theorems as advice in their manuals and message boards.
+
+In particular, STAN [[citep:standevelopmentteam_stan_2014]] is known for
+having a well written manual that details user-level manipulations to account for
+common sampling issues arising from poorly specified models
+[[citep:GelmanTransformingparameterssimple2019]].  Note that, the description
+"poorly specified" is conditional on the given estimation approach.
+
+Among the advice given in STAN's manual is the classic pathological "funnel"
+model of [[citet:neal_slice_2003]].  This model can be reparameterized using the
+following rule between a standard Gaussian random variable and its
+affine transform:
 #+BEGIN_SRC latex
 \begin{equation}
   \label{eq:normal-affine-trans}
@@ -335,8 +365,8 @@ random variable and its affine transform:
 \end{equation}
 #+END_SRC
 
-Under the left-to-right application of Rule [[eqref:eq:normal-affine-trans]],
-the funnel model exhibits much better sampling properties.
+Under [[eqref:eq:normal-affine-trans]], terms in the funnel model can be expanded
+resulting in an equivalent model that exhibits much better sampling properties.
 
 The work we detail here is motivated by the desire to see relations like these
 used within statistical modeling systems, so that model specification is more
@@ -376,33 +406,38 @@ Some examples involve Gibbs samplers, scale mixture representations for sparsity
 
 As a proof of concept using Theano's existing optimization system, automatic
 simplification of random variables was demonstrated in
-[[citet:WillardRoleSymbolicComputation2017]].  While it is more than possible
-to extend the same approach into auto-conjugation and related statistical
-optimizations, the scalability and means of specifying new optimizations wasn't
-promising.  One element of concern involved the need use an identity in more than
-one direction.  This need can arise when, say, one direction of an identity like
-Rule [[eqref:eq:normal-affine-trans]] is useful for computational reasons (e.g.
-the funnel problems) and the other direction helps one determine the
-distribution type of a term.  The latter is important for determining when a
-specialized sampler can be applied, since it's not apparent that \(\mu + \sigma
-Y\) in Rule [[eqref:eq:normal-affine-trans]] is a normal random variable unless
-the right-to-left rule is applied.
+[[citet:WillardRoleSymbolicComputation2017]].  While it is more than possible to
+extend the same approach into auto-conjugation and related statistical
+optimizations, the scalability and means of specifying new optimizations within
+Theano wasn't promising.
 
-Considerations like these lead quickly into the domain of term rewriting
-[[citep:BaaderTermrewritingall1999]].  The example involving Rule
-[[eqref:eq:normal-affine-trans]] and the relevance of both directions of its implied
-rewrite rules begins to touch upon the ideas of graph normalization/canonicalization,
-rewrite rule completion, and general equational reasoning.  Specifically, it would
-seem that a convenient normal form would only help solve some problems, and the
-ability to apply rewrites in both directions would still be relevant even
-after--say--generating a reduced set of rewrite rules using a Knuth-Bendix-like
-completion procedure [[citep:Huetcompleteproofcorrectness1981]].
+One important concern involves the need to use identities in more than one
+direction.  For instance, one direction of the identity underlying
+[[eqref:eq:normal-affine-trans]] is useful for computational reasons (e.g.  the
+funnel problems) and the other direction helps one determine the distribution
+type of a sub-term (i.e. given \(Y \sim \operatorname{N}\mleft( 0, 1 \mright)\)
+we can derive distribution of \(X\)).  The latter information might be needed by
+a system that construct custom samplers, or to reformulate a model so that it
+can be used by a given sampling routine.
 
-It's likely that classical niceties, like graph normal forms that
-guarantee rewrite rule termination, aren't available to us, especially given our
-desire for an interactive system for ad hoc additions and experimentation.
-When they are, however, we would like the means to apply methods like rewrite
-rule completion.
+This otherwise natural use of identities isn't covered well by modern
+programming frameworks, and that's where logic and relational programming
+becomes a real consideration.
+
+Considerations like these also lead quickly into the domain of term rewriting
+[[citep:BaaderTermrewritingall1999]]. Graph normalization/canonicalization,
+rewrite rule completion [[citep:Huetcompleteproofcorrectness1981]], and general
+equational reasoning are all ground-level subjects in this situation.
+
+With this in mind, it's likely that our objectives won't often lead to the
+classical term rewriting niceties, like easily determined normal forms and term
+orderings with strong guarantees.  Given our desire for an interactive system in
+which to perform ad hoc additions and experimentation, it seems even less
+likely.  Even so, when such niceties are available, we would at least like the
+means to derive and apply them--or at framework that also caters to work in
+those areas.  Furthermore, if it's ever possible to produce any results in the
+worst of term rewriting situations (e.g. amidst non-terminating
+operations/systems), then we would like a framework that facilitates that.
 
 Overall, we seek a middle ground that provides an approachable, powerful, yet
 light-weight framework for orchestrating domain-specific relations.
