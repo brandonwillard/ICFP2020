@@ -1273,42 +1273,43 @@ They also appear in implementations of relational interpreters where they
 encode the supported forms of a target language (e.g. variable assignment,
 conditionals, etc.)
 
-With equational identities nicely encoded by src_scheme[:eval never]{conde}
-forms, it's possible for the rewrite-completion algorithms mentioned in Section
-[[#sec:want-to-do]] to be applied automatically in some cases, and, if a complete
-and reduced rewrite system can be generated from
-a src_scheme[:eval never]{conde} it would be worth determining if--or when--the
-resulting system could be beneficial to the general performance of miniKanren
-in these tasks.
-Is it possible that some cases of non-terminating goal orderings could be
-avoided by completion?  Would a src_scheme[:eval never]{conde} implied by
-completion result in fewer goal evaluations and failed branches?
+These src_scheme[:eval never]{conde} idioms comprise a large portion of the
+miniKanren work implied here, and their size could grow very quickly over time.
+This leads to performance questions that are possibly answered by work on guided
+search [[citep:SwordsGuidedSearchminiKanren, ZhangNeuralGuidedConstraint2018]]
+and discerning src_scheme[:eval never]{conde} branch selection
+[[citep:BoskinSurprisinglyCompetitiveConditional2018]].
 
-Alternatively, is it possible that miniKanren could be utilized by the
+There is also little reason to think that a
+single src_scheme[:eval never]{conde} will--or even /should/--encode most of a
+system's implemented identities, so a means of compiling goals--say--for the
+purposes of merging branches might be worth considering, as well.
+
+With equational identities nicely encoded by src_scheme[:eval never]{conde}
+forms, there's also the possibility that the rewrite-completion algorithms
+mentioned in Section [[#sec:want-to-do]] could be applied automatically.  When a
+complete and reduced rewrite system can be generated from
+a src_scheme[:eval never]{conde}, it would be interesting to know whether or not
+the resulting system improves the general performance of miniKanren.
+
+Also, is it possible that some cases of non-terminating goal orderings could be
+avoided by completion? Likewise, could the results of completion be used to
+produce a new, equivalent src_scheme[:eval never]{conde} that results in fewer
+goal evaluations and/or failed branches?
+
+Alternatively, is it possible that miniKanren could be utilized by a
 completion algorithm itself so that it produces potentially relevant results
-when a system otherwise wouldn't terminate (e.g. via infinite goal streams)?
+when it otherwise wouldn't terminate (e.g. via infinite goal streams)?
 What are the advantages of performing completion in a relational fashion, and
 what unique elements can miniKanren provide to that situation (e.g. easier
-implementation of experimental completion algorithms)?  Could miniKanren
-accelerate research into tensor calculus systems
-[[citep:ArrighiOperationalsemanticsformal2004]]?  Proving rewrite termination
-and completion itself can involve SAT problems
+implementation of experimental completion algorithms)?
+
+Proving rewrite termination and completion itself can involve SAT problems
 [[citep:EndrullisMatrixinterpretationsproving2008, KleinMaximalcompletion2011]];
 can miniKanren's constraint capabilities--among other things--be applied in this
 area?
 
-These goals comprise a bulk of the miniKanren work implied here, and their size
-could grow quickly over time.  This leads to performance questions that are
-possibly answered by work on guided search [[citep:SwordsGuidedSearchminiKanren,
-ZhangNeuralGuidedConstraint2018]] and src_scheme[:eval never]{conde} branch
-selection [[citep:BoskinSurprisinglyCompetitiveConditional2018]].
-
-There is also little reason to think that a single src_scheme[:eval never]{conde}
-will--or even /should/--contain all identities, so a means of compiling
-goals and assessing their combined src_scheme[:eval never]{conde} branches
-might be worth considering in this context.
-
-Additionally, our Python implementation of miniKanren comes with experimental
+Our Python implementation of miniKanren comes with experimental
 support for associative and commutative (AC) relations.
 We've found utility in assigning these two properties to existing operators from
 other libraries (e.g. addition operators in Theano and TensorFlow) as a means
