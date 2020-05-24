@@ -47,7 +47,7 @@
 #+SETUPFILE: latex-setup.org
 
 #+LATEX_HEADER: \author{Brandon T. Willard}
-#+LATEX_HEADER: \affiliation{\city{Chicago} \state{IL} \country{USA}}
+#+LATEX_HEADER: \affiliation{\institution{University of Chicago} \city{Chicago} \state{IL} \country{USA}}
 #+LATEX_HEADER: \email{bwillard@uchicago.edu}
 
 #+PROPERTY: header-args :eval never-export :exports both :results output drawer replace
