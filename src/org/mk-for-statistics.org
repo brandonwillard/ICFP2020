@@ -125,22 +125,18 @@ because of this strong association, tensor libraries often provide
 deep learning-specific functionality (e.g. tools for constructing
 DL models, common activation functions, etc.)
 
-:TODO:
-- Provide a small code example?
-:END:
-
 Probabilistic programming languages are domain-specific languages that aid in
 the specification of statistical models and the application of estimation
-methods on said models.  Often, PPLs reflects the formal, mathematical
-specification of statistical modeling.
-In general, PPLs are built on top of libraries that implement composable types
-representing elements from probability theory--like statistical distributions and
-random variables.  Nowadays, these libraries are increasingly backed by tensor
-libraries.
+methods on said models.  Often, PPLs will reflect the formal, probability
+theory-based language used to specify statistical models, but that connection
+with probability theory tends to serve primarily in an interface role.
+PPLs also implement related elements--like random variables and statistical
+distributions--and, in some cases, they provide limited support for the laws and
+identities of probability theory (e.g. addition and multiplication of random
+variables).
 
-:TODO:
-- Provide a small code example?
-:END:
+Nowadays, PPLs are increasingly backed by tensor libraries, so the two subjects
+are connected in this way.
 
 There is an appreciable amount of symbolic computation behind the standard Deep
 Learning libraries of today, like Theano [[citep:bergstra_theano:_2010]],
@@ -168,27 +164,25 @@ able to avoid numerous unnecessary numeric calculations and increase the overall
 ``flexibility'' of function/model specification.
 
 Unfortunately, most other tensor libraries do not offer as much in the way of
-user-level Python manipulation of graphs or a graph design and format
-that lends well to user-level term rewriting.  In the case of TensorFlow, an
-internal graph canonicalization and optimization library
-[[citep:LarsenTensorFlowGraphOptimizations2019a]] is being actively developed,
-but--at the moment--core work is done exclusively in C++ and the potential for
-robust user-defined optimizations isn't clear.
+user-level Python manipulation of graphs.  In the case of TensorFlow, an
+internal graph canonicalization and optimization library Grappler
+[[citep:LarsenTensorFlowGraphOptimizations2019a]] is being actively developed.
+At the moment--its core work is done exclusively in C++ and the potential
+for robust user-defined optimizations isn't clear.
 
 Outside of the aforementioned tensor libraries, other projects approach similar
 symbolic-oriented operations--like AD--through function tracing
-[[citep:JAX2020]] and Python AST parsing [[citep:tangent2020]], instead of
-explicitly constructed computation graphs.  As with most tensor libraries,
-these projects aren't particularly focused on supporting generic graph
-manipulation or symbolic mathematics.  Nevertheless, they demonstrate another
-burgeoning entry-point to general symbolic computation.
+[[citep:JAX2020]] and Python AST parsing [[citep:tangent2020]].  As with most
+tensor libraries, these projects aren't particularly focused on supporting
+generic graph manipulation or symbolic mathematics.  Nevertheless, they
+demonstrate another burgeoning entry-point to general symbolic computation.
 
 At this point in time, there is a fairly well established set of modern
 machine learning and statistical modeling libraries that are all fundamentally
 built upon the basics of symbolic graphs representing
 tensor algebra operations.  They all vary in the degree to which they
 implement symbolic mathematics or programmatically encode the underlying
-high-level mathematics.  Regardless, the case for more advanced symbolic
+high-level math.  Regardless, the case for more advanced symbolic
 computation and mathematics is slowly being made by multiple influential
 projects, and there's already enough reason and prior work to start assessing
 the directions this could go, and how we might get the most out of it.
@@ -199,22 +193,14 @@ projects, so that quality code can be reused, existing expertise can be
 leveraged, and community involvement from domain experts is easily incorporated.
 
 Within the Python community, [[citet:RocklinMathematicallyinformedlinear2013]]
-states this sentiment with regards to the intelligent use of optimized linear
-algebra functions and the basics of term rewriting.  This work follows the same
-principles, but focuses on the areas of statistical modeling and, more
-specifically, Bayesian modeling.  Still, in order to reach the area of
-statistical modeling, the same foundational properties are required: flexible,
-compartmentalized, and open systems that are easily integrated with established
-libraries and map well to their high-level abstractions.
-
-Most symbolic mathematics libraries do not have these properties.  Instead, they
-require one to work entirely within the limited ecosystems they provide, and, as
-a result restrict their application within more advanced--albeit narrower--libraries
-that specialize in, say, tensor algebra.  Often, only a small portion of a
-symbolic mathematics library's functionality is relevant, but it isn't possible
-to use these portions independently.  Worse yet, some libraries are literally
-their own programming languages and present an unjustifiable barrier to their
-integration within other systems.
+states the same sentiments with regards to the intelligent use of optimized
+linear algebra functions and the basics of term rewriting.  This work follows
+the same principles, but focuses on the areas of statistical modeling and, more
+specifically, Bayesian modeling.  That is to say, we seek flexible,
+compartmentalized and open systems that are easily integrated with established
+libraries and map well to their high-level abstractions.  Ideally, we could have
+all this without much context switching--in other words, the need to operate in
+more than one programming languages or between programming languages.
 
 * What we want to do in Statistical Modeling
 :PROPERTIES:
