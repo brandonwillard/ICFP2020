@@ -1242,31 +1242,51 @@ graphs.
 * Discussion
 
 Looking forward, the ``functions grimoire'' project of
-[[citet:Johanssonfungrim2020]] is a great example of community-sourced and
-encoded domain knowledge.  It serves as a prime example of an independently
-developed, high-level knowledge encoding effort that could provide relations
-deployable by miniKanren within another computationally-focused system like
-TensorFlow or JAX.  These are the cross-overs made possible by the ``glue''
-that could be miniKanren.
+[[citet:Johanssonfungrim2020]], Fungrim, is a great example of community-sourced and
+programmatically encoded domain knowledge in mathematics.  It serves as a prime
+example of an independently developed, high-level knowledge encoding effort from
+which relations could be sourced and used by miniKanren in Python.  In
+[[citet:ByrdwebyrdmediKanren2020]] miniKanren is used to reason over an external
+database of medical knowledge, so the a precedent for this type of work has
+already been set.
 
 One currently unexplored area involves interactions between miniKanren and
-symbolic algebra libraries.  We don't expect miniKanren to replace symbolic
-algebra libraries, especially not when many symbolic algebra operations are not
-needed in a relational capacity, and there is an immediate place for all the
-standard algebraic simplifications offered by libraries like SymPy
-[[citep:sympydevelopmentteam_sympy_2014]].  Distinctions arise when one
-considers how ``orchestratable'' said symbolic algebra libraries actually are.
-Fortunately, SymPy can be directly integrated with a Python version of
-miniKanren.  This opens up the possibility of applying advanced algebraic
-operations within goals.  One example could involve the use of
-inverse-Laplace transforms for finding scale mixture decompositions of random
-variables when they aren't directly encoded in an existing goal.
+symbolic algebra libraries.  Although a lot of symbolic algebra is possible
+using miniKanren alone, we don't necessarily expect it to replace symbolic
+algebra libraries any time soon.  Luckily, when our statistical modeling goals require
+advanced symbolic algebra functionality provided by existing libraries, like
+SymPy [[citep:sympydevelopmentteam_sympy_2014]],
+they can be used directly from within miniKanren.
+For example, one could use SymPy to perform a Laplace transform--or its
+inverse--within an implementation of a normal scale mixture
+[[citep:BhadraGlobalLocalMixtures2020]] relation between random variables, since
+the underlying mathematical relation is functionally described by Laplace
+transforms in both directions.
 
-Perhaps another concrete example of how a library like SymPy could be leveraged
+A combination of miniKanren and computer algebra could also be used to realize
+elements of the computer algebra and interactive theorem proving synthesis
+described in [[citet:KaliszykCertifiedcomputeralgebra2007]].
+
+Perhaps another concrete example of how a symbolic algebra library could be leveraged
 by miniKanren is given by the system described in
-[[citet:Waliahighlevelinferencealgorithms2018]]; if this system were implemented
-in miniKanren, an implementation of the type rules might be straight-forward to
-express /and/ the ~integrate~ steps could be easily outsourced to SymPy.
+[[citet:Waliahighlevelinferencealgorithms2018]].  Here, miniKanren could be used
+to implement the typing rules, and the ~integrate~ steps could be outsourced to
+SymPy.  By targeting standard NumPy [[citep:NumpyDevelopersNumpy2017]] output,
+the results could be used by any number of systems, like JAX, that provide
+vectorization, JIT compilation, etc.
+
+Ultimately, we've described the construction of a strictly Python version of the
+system in [[citet:Waliahighlevelinferencealgorithms2018]] that makes use of
+multiple popular, actively developed projects specializing in their respective
+domains (e.g. symbolic integration, vectorization, JIT compilation).  The original
+implementation uses a complex pipeline
+[[citep:Waliahighlevelinferencealgorithms2018][Figure 1]] that operates across
+multiple independent systems, one of which is Hakaru
+[[citep:NarayananProbabilisticinferenceprogram2016]].  Hakaru is an entirely
+independent system and programming language for probabilistic programming.  In
+contrast, the system we describe is simply an orchestration of existing Python
+libraries driven by miniKanren, and it can make use of whichever tensor libraries,
+compilation frameworks, and PPLs are most suitable.
 
 Regarding miniKanren itself, consider the following idiom:
 #+BEGIN_SRC scheme :eval never
@@ -1276,13 +1296,12 @@ Regarding miniKanren itself, consider the following idiom:
         (== rhs replace-form-2))
        ...)
 #+END_SRC
-
-src_scheme[:eval never]{conde}s of this form are natural for encoding
-identities of the form \(\text{match-form-1} = \text{replace-form-1}\) that
-relate src_scheme[:eval never]{lhs}, src_scheme[:eval never]{rhs}.
-They also appear in implementations of relational interpreters where they
-encode the supported forms of a target language (e.g. variable assignment,
-conditionals, etc.)
+src_scheme[:eval never]{conde}s like this are natural for encoding identities
+of the form \(\text{match-form-1} = \text{replace-form-1}\) that are applied to
+the terms src_scheme[:eval never]{lhs} and src_scheme[:eval never]{rhs}.  They
+also appear in implementations of relational interpreters where they encode the
+supported forms of a target language (e.g. variable assignment, conditionals,
+etc.)
 
 These src_scheme[:eval never]{conde} idioms comprise a large portion of the
 miniKanren work implied here, and their size could grow very quickly over time.
@@ -1334,7 +1353,7 @@ arbitrary--but known and fixed--arities be efficiently supported?" and "How can
 we overcome some of the goal ordering issues that arise due to commutativity?".
 
 In [[citep:WillardPullRequest272020]], we address the latter question with a
-form of ``groundedness''-based term reordering goal.  This reordering is performed on
+``groundedness''-based term reordering goal.  This reordering is performed on
 the src_scheme[:eval never]{cdr} sub-terms as a relation is applied between term
 graphs, since the order in which a relation is applied to corresponding
 sub-terms is--generally--immaterial.  In other words, when walking a
