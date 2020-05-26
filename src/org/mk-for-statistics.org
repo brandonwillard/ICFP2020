@@ -486,10 +486,11 @@ Python implementation of miniKanren.
 * Symbolic Computation in Python Driven by miniKanren
 
 In the following sections we detail our implementation of miniKanren
-[[citep:Willardpythologicalkanren2020]], operating under the PyPy
+[[citep:Willardpythologicalkanren2020]], operating under the PyPi
 name src_python[:eval never]{miniKanren} and Python package
-name src_python[:eval never]{kanren}, and its ecosystem of complementary
-packages.
+name src_python[:eval never]{kanren}.  We also describe its ecosystem of
+complementary packages src_python[:eval never]{etuples}, src_python[:eval never]{cons},
+and src_python[:eval never]{symbolic-pymc}.
 
 src_python[:eval never]{kanren} is a fork that tries to maintain syntactic
 parity with its predecessor src_python[:eval never]{logpy}
@@ -505,19 +506,19 @@ exceptions when goal constructor arguments were not sufficiently ground for
 a given task.  The exception would cause the goals to be reordered until
 an ordering satisfied these goals' groundedness requirements.
 
-This exception-based approach was combined with a lightweight tuple-based
+This exception-based approach was combined with a lightweight tuple-based,
 Lisp-like expression evaluator that operated in tandem with the goal reordering.  Both
 of these components were built directly into the core stream processing
 functions and introduced additional complexity and challenges, but, most of all,
 they made it much easier to construct non-relational goals and imposed new,
-non-miniKanren semantics, that increased the barrier to entry beyond a simple
+non-miniKanren semantics that increased the barrier to entry beyond a simple
 understanding of core Python and miniKanren.
 
 Our implementation of miniKanren's core mechanics does not operate on Lisp-like
-idioms or a its invent its own goal processing semantics.  Additionally, it provides
-a straight-forward object-oriented framework for implementing truly relational
-constraints.  These points will be covered in more detail in the following
-sub-sections.
+idioms, yet it maintains an operational similarity to the Scheme implementations.
+Additionally, it provides a straight-forward object-oriented framework for
+implementing truly relational constraints.  These points will be covered in more
+detail in the following sub-sections.
 
 First, we must note that both Python implementations share the same small,
 but noteworthy, deviations from the standard Scheme-based miniKanrens.
@@ -541,7 +542,7 @@ and some of the idioms available to them.
 #+ATTR_LATEX: :float nil :placement h!
 #+CAPTION: Example idioms for generator-based goals in Python.
 #+NAME: low-level-relations
-#+BEGIN_SRC python :eval never -n 0 -r
+#+BEGIN_SRC python -n -r :eval never
 def relationo(*args):
     """Construct a goal for this relation."""
 
@@ -607,10 +608,10 @@ def relationo(*args):
 #+END_SRC
 
 Simply put, a goal is responsible for either explicitly generating its goal
-stream (e.g. [[(goal-generator-loop)]], [[(goal-generator-condition)]]) or deferring to
-other goals (e.g. [[(goal-generator-relation)]]) and/or goal combinations via the
+stream (e.g. Line [[(goal-generator-loop)]] and [[(goal-generator-condition)]]) or deferring to
+other goals (e.g. Line [[(goal-generator-relation)]]) and/or goal combinations via the
 stream manipulation functions src_python[:eval never]{lall}
-and src_python[:eval never]{lany} (e.g. [[(goal-generator-stream)]]).
+and src_python[:eval never]{lany} (e.g. Line [[(goal-generator-stream)]]).
 
 The idioms described in Listing [[low-level-relations]] are realized in a number of
 low-level goal implementations within src_python[:eval never]{kanren}.  One good
