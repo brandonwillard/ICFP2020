@@ -52,7 +52,7 @@
 
 #+PROPERTY: header-args :eval never-export :exports both :results output drawer replace
 #+PROPERTY: header-args+ :session dlm-optimizations :comments noweb
-#+PROPERTY: header-args:python :noweb-sep "\n\n"
+#+PROPERTY: header-args:python :noweb-sep "\n\n" :results none
 #+PROPERTY: header-args:latex :results raw replace :exports results :eval yes
 
 #+BEGIN_abstract
