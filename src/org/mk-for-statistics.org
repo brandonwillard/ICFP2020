@@ -296,13 +296,13 @@ hand and used as input to such systems.  At the present, the best systems simply
 provide broadly useful identities and theorems as advice in their manuals and
 message boards.
 
-In particular, STAN [[citep:standevelopmentteam_stan_2014]] is known for
+In particular, Stan [[citep:standevelopmentteam_stan_2014]] is known for
 having a well written manual that details user-level manipulations to account for
 common sampling issues arising due to poorly specified models
-[[citep:GelmanTransformingparameterssimple2019]].  Note that, the description
+[[citep:GelmanTransformingparameterssimple2019]].  Note that the description
 "poorly specified" is conditional on the given estimation approach.
 
-Among the advice given in STAN's manual is the classic pathological "funnel"
+Among the advice given in Stan's manual is the classic pathological "funnel"
 model of [[citet:neal_slice_2003]].  This model can be reparameterized using the
 following rule between a standard Gaussian random variable and its
 affine transform:
@@ -328,13 +328,13 @@ The work we detail here is motivated by the desire to see relations like these
 used within statistical modeling systems, so that model specification is more
 flexible and less brittle with respect to the exact specification of a model.
 
-Systems like STAN and the Python-based PyMC
+Systems like Stan and the Python-based PyMC
 [[citep:SalvatierProbabilisticprogrammingPython2016]] are PPLs, so their role as
 programming languages is clear, and--in line with most programming
 languages--compiler optimizations can be used to improve performance
 and expand the expressive potential of a language's syntax.
 
-Projects like STAN and PyMC rely almost exclusively on AD and have more or less
+Projects like Stan and PyMC rely almost exclusively on AD and have more or less
 superseded older projects based on different, non-gradient-based generalized
 methodologies, like BUGS [[citep:LunnBUGSprojectEvolution2009]].  BUGS used some
 of the domain-specific identities implied here to construct a surprisingly robust
@@ -520,12 +520,13 @@ Additionally, it provides a straight-forward object-oriented framework for
 implementing truly relational constraints.  These points will be covered in more
 detail in the following sub-sections.
 
-First, we must note that both Python implementations share the same small,
-but noteworthy, deviations from the standard Scheme-based miniKanrens.
-Specifically, the \(\equiv\) goal is represented by the
-function src_python[:eval never]{eq}, there is no ~fresh~--instead, fresh logic
-variables are constructed explicitly using the
-function src_python[:eval never]{var}, and the functionality of ~bind~ and
+First, we must note that both Python implementations share the same small, but
+noteworthy, deviations from the standard Scheme-based miniKanrens.
+Specifically, the basic miniKanren states are implemented using Python's
+built-in src_python[:eval never]{dict} type, the \(\equiv\) goal is represented
+by the function src_python[:eval never]{eq}, there is no ~fresh~--instead, fresh
+logic variables are constructed explicitly using the
+function src_python[:eval never]{var}--and the functionality of ~bind~ and
 ~mplus~ are represented by the logical ``and'' and ``or''
 functions src_python[:eval never]{lall} and src_python[:eval never]{lany} and
 are essentially the ~conj~ and ~disj~ stream functions of
@@ -572,44 +573,27 @@ def relationo(*args):
             if isvar(a) or x > 3:
                 S_new[a] = x
 
-            # If the stream manipulating functions support it, information can
-            # be sent back to the goal and used!
             z = yield S_new  # (ref:goal-generator-loop)
 
             if not z:
                 x += 1
 
-        # 2. If you only want to confirm something in/about the state, `S`, then
-        # simply `yield` it if the condition(s) are met:
         if some_condition:
             yield S  # (ref:goal-generator-condition)
         else:
-            # If the condition isn't met, end the stream by returning/not
-            # `yield`ing anything.
             return
 
-        # 3. If you can do everything using existing goal constructors, then
-        # simply use `yield from`:
-        yield from lall(conso(1, var(), args_rf), ...)  # (ref:goal-generator-stream)
+        a_lv = var()
+        yield from lall(conso(1, a_lv, args), eq(a_lv, [2, 3]))  # (ref:goal-generator-stream)
 
-        # 4. If you want to implement a recursive goal, simply call the goal
-        # constructor.  It won't recurse endlessly, because this goal
-        # needs to be evaluated before the recursive call is made.
-        # This is how you create infinite miniKanren streams/results that yield
-        # lazily.
-        yield from relationo(*new_args)  # (ref:goal-generator-relation)
+        yield from relationo(*new_args)  # (ref:goal-generator-recursion)
 
-        # 3. + 4. can be combined with 1. to directly use the results produced
-        # from other goal constructor streams and--for example--arbitrarily
-        # reorder the output and evaluation of goals.
-
-    # Finally, return the constructed goal.
     return relationo_goal
 #+END_SRC
 
 Simply put, a goal is responsible for either explicitly generating its goal
 stream (e.g. Line [[(goal-generator-loop)]] and [[(goal-generator-condition)]]) or deferring to
-other goals (e.g. Line [[(goal-generator-relation)]]) and/or goal combinations via the
+other goals and/or goal combinations via the
 stream manipulation functions src_python[:eval never]{lall}
 and src_python[:eval never]{lany} (e.g. Line [[(goal-generator-stream)]]).
 
@@ -629,7 +613,7 @@ miniKanren relations and amounting to Bogosort
 
 Within ordinary goals like src_python[:eval never]{relationo_goal} one is able
 to leverage the naturally delayed nature of Python's generators and seamlessly
-define recursive goals by calls to the outer goal
+define recursive goals (e.g. Line [[(goal-generator-recursion)]]) by calls to the outer goal
 constructor src_python[:eval never]{relationo}, and, in the case of goal
 constructors that do not define their own low-level goals, recursion is
 facilitated by the \(\eta\)-delay function, src_python[:eval never]{Zzz}, of
@@ -661,7 +645,10 @@ standard list-based approach isn't as natural or efficient as it is in Scheme.
 ** Constraints
 Our Python implementation follows the approach of
 [[citet:Hemannframeworkextendingmicrokanren2017]] to implement a minimal
-constraint system in miniKanren.
+constraint system in miniKanren.  Listing [[constraints-example]] provides some
+simple illustrations of the standard disequality
+(named src_python[:eval never]{neq} here) and type constraints--the latter using
+Python's src_python[:eval never]{isinstance} naming scheme.
 
 #+ATTR_LATEX: :float nil :placement h!
 #+CAPTION: Basic constraint goals example.
@@ -681,6 +668,26 @@ constraint system in miniKanren.
 ...     membero(x, (1.1, 2, 3.2, 4)))
 (2, 4)
 #+END_SRC
+
+When constraints are used, the state type--normally an ordinary
+Python src_python[:eval never]{dict}--is replaced with a new
+type: src_python[:eval never]{ConstrainedState}.  This type is a subclass of the
+interface src_python[:eval never]{Mapping}, so it behaves effectively the same
+as a standard src_python[:eval never]{dict}.  The main functionality provided
+by src_python[:eval never]{ConstrainedState} is constraint store tracking and
+validation.
+
+Constraint store validation occurs after each successful unification
+involving a src_python[:eval never]{ConstrainedState}.  Adding new constraints
+involves constructing a custom constraint store class and a goal that assigns
+the constraint and adds or updates the associated store in a miniKanren state.
+For convenience, there is an abstract src_python[:eval never]{PredicateStore}
+type that simplifies the construction of predicate-based constraints.
+
+Given that constraint checking is tied directly to
+the src_python[:eval never]{Mapping} interface, one can dispatch on key
+addition, deletion, and updating in order to implement more efficient constraint
+store management and validation.
 
 ** src_scheme[:eval never]{cons}
 One of the main challenges involved in implementing miniKanren in some host
