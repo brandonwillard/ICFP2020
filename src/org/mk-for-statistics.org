@@ -222,7 +222,7 @@ add new theorems and immediately use the resulting automations for
 high-level testing, experimentation, and concrete applications.
 
 Statistical modeling is surprisingly amenable to symbolic methods
-[[citep:CaretteModelmanipulationpart2007,
+[[citep:CaretteCasestudiesmodel2008,
 CaretteSimplifyingProbabilisticPrograms2016]]--and especially when one
 restricts the context to specific practices like Bayesian modeling
 [[citep:ShanExactBayesianInference2017]], where there exist fundamental
